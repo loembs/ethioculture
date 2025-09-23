@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ethiopian Cultural Design System - Couleurs authentiques inspirées du drapeau et de la culture éthiopienne */
+
+@layer base {
+  :root {
+    /* Ethiopian Color Palette */
+    --ethiopian-green: 143 71% 35%;        /* #169b4f - Principal */
+    --ethiopian-red: 348 71% 44%;          /* #c2212d - Accent */
+    --ethiopian-blue: 202 52% 63%;         /* #65b1dc - CTA secondaires */
+    --ethiopian-black: 0 0% 0%;            /* #000000 - Textes importants */
+    --ethiopian-gold: 32 73% 54%;          /* #e4912b - Accents chauds */
+    --ethiopian-silver: 240 2% 76%;        /* #c3c2c5 - Fonds/clairs */
+    
+    /* Semantic Design System */
+    --background: 0 0% 100%;
+    --foreground: var(--ethiopian-black);
+    
+    --card: 0 0% 100%;
+    --card-foreground: var(--ethiopian-black);
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: var(--ethiopian-black);
+    
+    --primary: var(--ethiopian-green);
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: var(--ethiopian-silver);
+    --secondary-foreground: var(--ethiopian-black);
+    
+    --muted: var(--ethiopian-silver);
+    --muted-foreground: 0 0% 45%;
+    
+    --accent: var(--ethiopian-red);
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: var(--ethiopian-red);
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: var(--ethiopian-silver);
+    --input: var(--ethiopian-silver);
+    --ring: var(--ethiopian-green);
+    
+    /* Ethiopian Cultural Gradients & Effects */
+    --gradient-ethiopian: linear-gradient(135deg, hsl(var(--ethiopian-green)), hsl(var(--ethiopian-gold)));
+    --gradient-flag: linear-gradient(180deg, hsl(var(--ethiopian-green)), hsl(var(--ethiopian-gold)), hsl(var(--ethiopian-red)));
+    --gradient-warm: linear-gradient(45deg, hsl(var(--ethiopian-gold)), hsl(var(--ethiopian-red)));
+    --shadow-cultural: 0 10px 30px -10px hsl(var(--ethiopian-green) / 0.3);
+    --shadow-warm: 0 5px 20px -5px hsl(var(--ethiopian-gold) / 0.4);
+    
+    /* Typography & Spacing */
+    --font-amharic: 'Noto Sans Ethiopic', system-ui, sans-serif;
+    --font-modern: 'Inter', system-ui, sans-serif;
+    --transition-cultural: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
