@@ -1,0 +1,815 @@
+/* Thème Éthiopien - Direction Artistique */
+
+/* Variables de couleurs inspirées de la culture éthiopienne */
+:root {
+  /* Couleurs principales - Inspirées des drapeaux et textiles éthiopiens */
+  --ethiopian-red: #DA020E;
+  --ethiopian-yellow: #FCDD09;
+  --ethiopian-green: #078930;
+  --ethiopian-blue: #0F47AF;
+  --ethiopian-white: #FFFFFF;
+  
+  /* Couleurs secondaires - Inspirées des épices et textiles */
+  --spice-gold: #D4AF37;
+  --spice-saffron: #F4A460;
+  --spice-cinnamon: #D2691E;
+  --spice-cardamom: #87CEEB;
+  --spice-berbere: #8B4513;
+  
+  /* Couleurs neutres - Inspirées de la terre éthiopienne */
+  --earth-terracotta: #E2725B;
+  --earth-sand: #F4E4BC;
+  --earth-charcoal: #2F2F2F;
+  --earth-clay: #CD853F;
+  
+  /* Couleurs d'accent */
+  --accent-warm: #FF6B35;
+  --accent-cool: #4A90E2;
+  --accent-royal: #6A1B9A;
+  
+  /* Dégradés éthiopiens */
+  --gradient-sunset: linear-gradient(135deg, var(--ethiopian-red) 0%, var(--spice-gold) 50%, var(--ethiopian-yellow) 100%);
+  --gradient-earth: linear-gradient(135deg, var(--earth-terracotta) 0%, var(--earth-sand) 50%, var(--spice-saffron) 100%);
+  --gradient-royal: linear-gradient(135deg, var(--ethiopian-blue) 0%, var(--accent-royal) 50%, var(--ethiopian-red) 100%);
+  --gradient-spice: linear-gradient(135deg, var(--spice-berbere) 0%, var(--spice-cinnamon) 50%, var(--spice-gold) 100%);
+}
+
+/* Animations fluides inspirées de la culture éthiopienne */
+@keyframes ethiopian-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(218, 2, 14, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(218, 2, 14, 0);
+  }
+}
+
+@keyframes spice-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(-5px) rotate(-1deg);
+  }
+}
+
+@keyframes cultural-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cultural-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cultural-slide-right {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes cultural-scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes golden-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
+  }
+}
+
+@keyframes wave-motion {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(5px) rotate(1deg);
+  }
+  50% {
+    transform: translateX(0) rotate(0deg);
+  }
+  75% {
+    transform: translateX(-5px) rotate(-1deg);
+  }
+}
+
+@keyframes dish-balance {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateX(2px) rotate(0.5deg) scale(1.02);
+  }
+  50% {
+    transform: translateX(0) rotate(0deg) scale(1);
+  }
+  75% {
+    transform: translateX(-2px) rotate(-0.5deg) scale(1.02);
+  }
+}
+
+@keyframes dish-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes scroll-left-fast {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes dish-sway {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(3px) rotate(-1deg);
+  }
+}
+
+/* Animations professionnelles pour le défilement */
+@keyframes scroll-main {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scroll-bg {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(50%);
+  }
+}
+
+@keyframes scroll-small {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.333%);
+  }
+}
+
+@keyframes professional-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.02);
+  }
+}
+
+@keyframes professional-glow {
+  0%, 100% {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1), 0 0 0 rgba(251, 171, 63, 0);
+  }
+  50% {
+    box-shadow: 0 25px 50px rgba(0,0,0,0.15), 0 0 20px rgba(251, 171, 63, 0.3);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Classes d'animation */
+.animate-ethiopian-pulse {
+  animation: ethiopian-pulse 2s infinite;
+}
+
+.animate-spice-float {
+  animation: spice-float 3s ease-in-out infinite;
+}
+
+.animate-cultural-fade-in {
+  animation: cultural-fade-in 0.8s ease-out;
+}
+
+.animate-cultural-slide-up {
+  animation: cultural-slide-up 0.8s ease-out;
+}
+
+.animate-cultural-slide-right {
+  animation: cultural-slide-right 0.8s ease-out;
+}
+
+.animate-cultural-scale-in {
+  animation: cultural-scale-in 0.6s ease-out;
+}
+
+.animate-golden-glow {
+  animation: golden-glow 2s ease-in-out infinite;
+}
+
+.animate-wave-motion {
+  animation: wave-motion 4s ease-in-out infinite;
+}
+
+.animate-dish-balance {
+  animation: dish-balance 3s ease-in-out infinite;
+}
+
+.animate-dish-float {
+  animation: dish-float 2s ease-in-out infinite;
+}
+
+.animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+
+.animate-scroll-right {
+  animation: scroll-right 25s linear infinite;
+}
+
+.animate-scroll-left-fast {
+  animation: scroll-left-fast 20s linear infinite;
+}
+
+.animate-dish-sway {
+  animation: dish-sway 3s ease-in-out infinite;
+}
+
+/* Classes d'animation professionnelles */
+.animate-scroll-main {
+  animation: scroll-main 40s linear infinite;
+}
+
+.animate-scroll-bg {
+  animation: scroll-bg 35s linear infinite;
+}
+
+.animate-scroll-small {
+  animation: scroll-small 30s linear infinite;
+}
+
+.animate-professional-float {
+  animation: professional-float 4s ease-in-out infinite;
+}
+
+.animate-professional-glow {
+  animation: professional-glow 3s ease-in-out infinite;
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Délais d'animation pour un effet en cascade */
+.animate-delay-100 { animation-delay: 0.1s; }
+.animate-delay-200 { animation-delay: 0.2s; }
+.animate-delay-300 { animation-delay: 0.3s; }
+.animate-delay-400 { animation-delay: 0.4s; }
+.animate-delay-500 { animation-delay: 0.5s; }
+
+/* Styles pour les éléments interactifs */
+.ethiopian-button {
+  background: var(--gradient-sunset);
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ethiopian-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.ethiopian-button:hover::before {
+  left: 100%;
+}
+
+.ethiopian-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* Cartes avec effet de profondeur */
+.ethiopian-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.ethiopian-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-sunset);
+}
+
+.ethiopian-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  border-color: var(--spice-gold);
+}
+
+/* Effets de texte */
+.ethiopian-text-gradient {
+  background: var(--gradient-sunset);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+.ethiopian-text-shadow {
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Styles pour les sections */
+.section-hero {
+  background: var(--gradient-royal);
+  position: relative;
+  overflow: hidden;
+}
+
+.section-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .ethiopian-card {
+    margin: 10px;
+  }
+  
+  .ethiopian-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+/* Styles pour les vidéos */
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(218, 2, 14, 0.7), rgba(15, 71, 175, 0.7));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  color: white;
+  text-align: center;
+  z-index: 2;
+}
+
+.video-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+/* Styles pour les éléments de cuisine */
+.cuisine-accent {
+  background: var(--gradient-spice);
+  padding: 2px;
+  border-radius: 15px;
+}
+
+.cuisine-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.cuisine-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+/* Styles pour les éléments d'art */
+.art-accent {
+  background: var(--gradient-royal);
+  padding: 2px;
+  border-radius: 15px;
+}
+
+.art-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.art-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+  border-color: var(--spice-gold);
+}
+
+/* ========================================
+   MODERN ETHIOPIAN HERO ANIMATIONS
+   ======================================== */
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+/* Fade In Up Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 1.2s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Enhanced Button Hover Effects */
+.modern-cta-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-cta-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.modern-cta-button:hover::before {
+  left: 100%;
+}
+
+/* Custom Shadow for Ethiopian Gold */
+.shadow-ethiopian-gold {
+  box-shadow: 0 10px 25px rgba(252, 221, 9, 0.3);
+}
+
+/* ========================================
+   MODERN TRIPLE CAROUSEL
+   ======================================== */
+
+.triple-carousel-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.carousel-slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.carousel-slide.active {
+  z-index: 3;
+  transform: scale(1) translateX(0);
+  opacity: 1;
+}
+
+.carousel-slide.next {
+  z-index: 2;
+  transform: scale(0.85) translateX(30%);
+  opacity: 0.7;
+  filter: blur(1px);
+}
+
+.carousel-slide.prev {
+  z-index: 1;
+  transform: scale(0.85) translateX(-30%);
+  opacity: 0.7;
+  filter: blur(1px);
+}
+
+/* Animation pour l'effet de transition */
+@keyframes slideInFromRight {
+  from {
+    transform: scale(0.85) translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: scale(0.85) translateX(30%);
+    opacity: 0.7;
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    transform: scale(0.85) translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: scale(0.85) translateX(-30%);
+    opacity: 0.7;
+  }
+}
+
+@keyframes slideToCenter {
+  from {
+    transform: scale(0.85) translateX(30%);
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+  to {
+    transform: scale(1) translateX(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes slideToLeft {
+  from {
+    transform: scale(1) translateX(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  to {
+    transform: scale(0.85) translateX(-30%);
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+}
+
+@keyframes slideToRight {
+  from {
+    transform: scale(1) translateX(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+  to {
+    transform: scale(0.85) translateX(30%);
+    opacity: 0.7;
+    filter: blur(1px);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .carousel-slide.next {
+    transform: scale(0.9) translateX(15%);
+  }
+  
+  .carousel-slide.prev {
+    transform: scale(0.9) translateX(-15%);
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-slide.next,
+  .carousel-slide.prev {
+    transform: scale(0.95) translateX(0);
+    opacity: 0.5;
+  }
+}
+
+/* ========================================
+   HEADER ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Header hover effects */
+.header-nav-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.header-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.header-nav-item:hover::before {
+  left: 100%;
+}
+
+/* Modern button glow effect */
+.modern-button-glow {
+  box-shadow: 0 0 20px rgba(252, 221, 9, 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+.modern-button-glow:hover {
+  box-shadow: 0 0 30px rgba(252, 221, 9, 0.5);
+}
+
+/* Header backdrop blur effect */
+.header-backdrop {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ========================================
+   DYNAMIC HERO TEXT ANIMATIONS
+   ======================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpDelay {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpDelay2 {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.animate-fade-in-up-delay {
+  animation: fadeInUpDelay 0.8s ease-out 0.2s both;
+}
+
+.animate-fade-in-up-delay-2 {
+  animation: fadeInUpDelay2 0.8s ease-out 0.4s both;
+}
+
+/* Smooth text transitions */
+.hero-text-transition {
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}

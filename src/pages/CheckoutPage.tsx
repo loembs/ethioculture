@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,33 +7,255 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CreditCard, Smartphone, Wallet, ArrowLeft, Lock, Truck } from "lucide-react";
-import { Link } from "react-router-dom";
+import { CreditCard, Smartphone, Wallet, ArrowLeft, Lock, Truck, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useCartManager } from "@/hooks/useCart";
+import { formatPrice } from "@/utils/currency";
+import { authService } from "@/services/authService";
+import { orderService, CreateOrderRequest } from "@/services/orderService";
 
 const CheckoutPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { cartItems, cartTotal, isLoading } = useCartManager();
   const [paymentMethod, setPaymentMethod] = useState("stripe");
   const [deliveryMethod, setDeliveryMethod] = useState("livraison");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  
+  // États pour le formulaire de livraison
+  const [shippingInfo, setShippingInfo] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: 'Éthiopie',
+    postalCode: '',
+    notes: ''
+  });
 
-  // Mock cart summary
-  const cartSummary = {
-    items: [
-      { name: "Doro Wat", quantity: 2, price: 36 },
-      { name: "Tisseuse de Habesha", quantity: 1, price: 850 },
-      { name: "Billet Festival", quantity: 2, price: 70 }
-    ],
-    subtotal: 956,
-    delivery: 5,
-    total: 961
-  };
+  // Calculer les totaux basés sur le vrai panier
+  const subtotal = cartTotal || 0;
+  const deliveryFee = deliveryMethod === "livraison" ? 5 : 0;
+  const total = subtotal + deliveryFee;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Vérifier l'authentification au chargement et pré-remplir les informations
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Vérifier d'abord si l'utilisateur est déjà authentifié localement
+        const isAuth = authService.isAuthenticated();
+        if (isAuth) {
+          setIsAuthenticated(true);
+          
+          // Pré-remplir avec les données locales d'abord
+          const localUser = authService.getUser();
+          if (localUser) {
+            setShippingInfo(prev => ({
+              ...prev,
+              firstName: localUser.firstName || '',
+              lastName: localUser.lastName || '',
+              email: localUser.email || '',
+              phone: localUser.phone || ''
+            }));
+          }
+          
+          // Essayer de rafraîchir les données en arrière-plan (optionnel)
+          try {
+            const user = await authService.getCurrentUser();
+            if (user) {
+              setShippingInfo(prev => ({
+                ...prev,
+                firstName: user.firstName || prev.firstName,
+                lastName: user.lastName || prev.lastName,
+                email: user.email || prev.email,
+                phone: user.phone || prev.phone
+              }));
+            }
+          } catch (refreshError) {
+            console.warn('Impossible de rafraîchir les données utilisateur:', refreshError);
+            // Ne pas déconnecter si le refresh échoue, utiliser les données locales
+          }
+        }
+      } catch (error) {
+        console.error('Erreur de vérification auth:', error);
+        // Seulement déconnecter si c'est une erreur d'authentification grave
+        if (error instanceof Error && error.message.includes('401')) {
+          authService.logout();
+        }
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Rediriger vers login si non authentifié
+  useEffect(() => {
+    if (!isCheckingAuth && !isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent('/checkout')}`, { replace: true });
+    }
+  }, [isCheckingAuth, isAuthenticated, navigate]);
+
+  // Ne pas rendre le composant si non authentifié
+  if (!isCheckingAuth && !isAuthenticated) {
+    return null;
+  }
+
+  // Afficher un loader pendant la vérification d'auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background py-8">
+        <div className="container mx-auto px-4 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground mt-4">Vérification de l'authentification...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Rediriger vers le panier si vide
+  if (!isLoading && (!cartItems || cartItems.length === 0)) {
+    return (
+      <div className="min-h-screen bg-background py-8">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-3xl font-bold mb-4">Panier vide</h1>
+          <p className="text-muted-foreground mb-6">Votre panier est vide. Ajoutez des articles avant de procéder au paiement.</p>
+          <Link to="/cart">
+            <Button>Retour au panier</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Commande en cours de traitement",
-      description: "Vous allez être redirigé vers le paiement sécurisé"
-    });
+    setIsCreatingOrder(true);
+
+    try {
+      // Vérifier que tous les champs requis sont remplis
+      if (!shippingInfo.firstName || !shippingInfo.lastName || !shippingInfo.email ||
+          !shippingInfo.phone || !shippingInfo.address || !shippingInfo.city ||
+          !shippingInfo.country || !shippingInfo.postalCode) {
+        toast({
+          title: "Informations manquantes",
+          description: "Veuillez remplir tous les champs obligatoires (prénom, nom, email, téléphone, adresse, ville, pays, code postal)",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Vérifier que le panier n'est pas vide
+      if (cartItems.length === 0) {
+        toast({
+          title: "Panier vide",
+          description: "Votre panier est vide",
+          variant: "destructive"
+        });
+        return;
+      }
+
+
+      // Mapper le paymentMethod vers les valeurs du backend
+      const mapPaymentMethod = (method: string): string => {
+        const mapping: Record<string, string> = {
+          'carte': 'CREDIT_CARD',
+          'paypal': 'PAYPAL',
+          'virement': 'BANK_TRANSFER',
+          'livraison': 'CASH_ON_DELIVERY'
+        };
+        return mapping[method.toLowerCase()] || 'CREDIT_CARD';
+      };
+
+      // Préparer les données de commande
+      const orderData: CreateOrderRequest = {
+        items: (cartItems || []).map(item => ({
+          productId: item.productId,
+          quantity: item.quantity
+        })),
+        shippingAddress: {
+          firstName: shippingInfo.firstName,
+          lastName: shippingInfo.lastName,
+          street: shippingInfo.address,
+          city: shippingInfo.city,
+          country: shippingInfo.country,
+          postalCode: shippingInfo.postalCode,
+          phone: shippingInfo.phone
+        },
+        paymentMethod: mapPaymentMethod(paymentMethod) as any,
+        notes: shippingInfo.notes
+      };
+
+      console.log('🔍 Order data being sent:', {
+        items: orderData.items,
+        itemsCount: orderData.items.length,
+        shippingAddress: orderData.shippingAddress,
+        paymentMethod: orderData.paymentMethod,
+        notes: orderData.notes
+      });
+
+      console.log('🔍 Cart items before mapping:', cartItems);
+      console.log('🔍 Payment method mapping:', {
+        original: paymentMethod,
+        mapped: mapPaymentMethod(paymentMethod)
+      });
+
+      // Validation côté client
+      if (!orderData.items || orderData.items.length === 0) {
+        throw new Error('Le panier est vide. Ajoutez des articles avant de passer commande.');
+      }
+
+      // Vérifier que tous les articles ont un productId valide
+      const invalidItems = orderData.items.filter(item => !item.productId || item.quantity <= 0);
+      if (invalidItems.length > 0) {
+        throw new Error('Certains articles du panier sont invalides. Veuillez réessayer.');
+      }
+
+      // Créer la commande
+      const createdOrder = await orderService.createOrder(orderData);
+      
+      toast({
+        title: "Commande créée avec succès",
+        description: `Commande #${createdOrder.orderNumber} enregistrée`
+      });
+
+      // Rediriger vers le paiement avec l'ID de commande
+      navigate(`/payment/${createdOrder.id}?amount=${total}&method=${paymentMethod}`);
+
+    } catch (error: any) {
+      console.error('Erreur lors de la création de la commande:', error);
+      
+      // Log des détails de l'erreur
+      if (error.response?.data) {
+        console.error('Détails de l\'erreur serveur:', error.response.data);
+      }
+      
+      // Gestion spécifique des erreurs réseau
+      let errorMessage = "Impossible de créer la commande. Veuillez réessayer.";
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch') || 
+            error.message.includes('ERR_HTTP2_PING_FAILED') ||
+            error.message.includes('ERR_NETWORK')) {
+          errorMessage = "Serveur temporairement indisponible. Veuillez réessayer dans quelques minutes.";
+        } else if (error.message.includes('timeout')) {
+          errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+        }
+      }
+      
+      toast({
+        title: "Erreur de commande",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingOrder(false);
+    }
   };
 
   const paymentOptions = [
@@ -44,75 +266,98 @@ const CheckoutPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background py-8">
+    <div className="min-h-screen bg-background py-4 sm:py-8">
       <div className="container mx-auto px-4 max-w-6xl">
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-center gap-2 sm:gap-4 mb-6 sm:mb-8">
           <Link to="/cart">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour au panier
+            <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Retour au panier</span>
+              <span className="sm:hidden">Retour</span>
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold">Finaliser la commande</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Finaliser la commande</h1>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Checkout Form */}
-          <div className="lg:col-span-2 space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               
               {/* Contact Information */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Informations de contact</CardTitle>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Informations de contact</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                <CardContent className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <Label htmlFor="firstName">Prénom *</Label>
-                      <Input id="firstName" required />
+                      <Input 
+                        id="firstName" 
+                        required 
+                        value={shippingInfo.firstName}
+                        onChange={(e) => setShippingInfo({...shippingInfo, firstName: e.target.value})}
+                      />
                     </div>
                     <div>
                       <Label htmlFor="lastName">Nom *</Label>
-                      <Input id="lastName" required />
+                      <Input 
+                        id="lastName" 
+                        required 
+                        value={shippingInfo.lastName}
+                        onChange={(e) => setShippingInfo({...shippingInfo, lastName: e.target.value})}
+                      />
                     </div>
                   </div>
                   <div>
                     <Label htmlFor="email">Email *</Label>
-                    <Input id="email" type="email" required />
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      required 
+                      value={shippingInfo.email}
+                      onChange={(e) => setShippingInfo({...shippingInfo, email: e.target.value})}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="phone">Téléphone *</Label>
-                    <Input id="phone" type="tel" required />
+                    <Input 
+                      id="phone" 
+                      type="tel" 
+                      required 
+                      value={shippingInfo.phone}
+                      onChange={(e) => setShippingInfo({...shippingInfo, phone: e.target.value})}
+                    />
                   </div>
                 </CardContent>
               </Card>
 
               {/* Delivery Method */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Truck className="h-5 w-5 mr-2" />
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg">
+                    <Truck className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Mode de récupération
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={deliveryMethod} onValueChange={setDeliveryMethod}>
-                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                    <div className="flex items-center space-x-2 p-2 sm:p-3 border rounded-lg">
                       <RadioGroupItem value="livraison" id="livraison" />
                       <Label htmlFor="livraison" className="flex-1 cursor-pointer">
                         <div>
-                          <div className="font-medium">Livraison à domicile</div>
-                          <div className="text-sm text-muted-foreground">Frais de livraison : 5€ • Délai : 30-45 min</div>
+                          <div className="font-medium text-sm sm:text-base">Livraison à domicile</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Frais de livraison : {formatPrice(5)} • Délai : 30-45 min</div>
                         </div>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                    <div className="flex items-center space-x-2 p-2 sm:p-3 border rounded-lg">
                       <RadioGroupItem value="emporter" id="emporter" />
                       <Label htmlFor="emporter" className="flex-1 cursor-pointer">
                         <div>
-                          <div className="font-medium">À emporter</div>
-                          <div className="text-sm text-muted-foreground">Gratuit • Prêt en 20-30 min</div>
+                          <div className="font-medium text-sm sm:text-base">À emporter</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Gratuit • Prêt en 20-30 min</div>
                         </div>
                       </Label>
                     </div>
@@ -123,31 +368,55 @@ const CheckoutPage = () => {
               {/* Delivery Address */}
               {deliveryMethod === "livraison" && (
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Adresse de livraison</CardTitle>
+                  <CardHeader className="pb-3 sm:pb-6">
+                    <CardTitle className="text-base sm:text-lg">Adresse de livraison</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     <div>
                       <Label htmlFor="address">Adresse *</Label>
-                      <Input id="address" required />
+                      <Input 
+                        id="address" 
+                        required 
+                        value={shippingInfo.address}
+                        onChange={(e) => setShippingInfo({...shippingInfo, address: e.target.value})}
+                      />
                     </div>
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                       <div>
                         <Label htmlFor="city">Ville *</Label>
-                        <Input id="city" required />
+                        <Input 
+                          id="city" 
+                          required 
+                          value={shippingInfo.city}
+                          onChange={(e) => setShippingInfo({...shippingInfo, city: e.target.value})}
+                        />
                       </div>
                       <div>
-                        <Label htmlFor="postalCode">Code postal *</Label>
-                        <Input id="postalCode" required />
+                        <Label htmlFor="postalCode">Code postal</Label>
+                        <Input 
+                          id="postalCode" 
+                          value={shippingInfo.postalCode}
+                          onChange={(e) => setShippingInfo({...shippingInfo, postalCode: e.target.value})}
+                        />
                       </div>
                       <div>
                         <Label htmlFor="country">Pays *</Label>
-                        <Input id="country" defaultValue="France" required />
+                        <Input 
+                          id="country" 
+                          required 
+                          value={shippingInfo.country}
+                          onChange={(e) => setShippingInfo({...shippingInfo, country: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div>
                       <Label htmlFor="instructions">Instructions de livraison (optionnel)</Label>
-                      <Textarea id="instructions" placeholder="Étage, code d'accès, etc." />
+                      <Textarea 
+                        id="instructions" 
+                        placeholder="Étage, code d'accès, etc."
+                        value={shippingInfo.notes}
+                        onChange={(e) => setShippingInfo({...shippingInfo, notes: e.target.value})}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -155,23 +424,23 @@ const CheckoutPage = () => {
 
               {/* Payment Method */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Lock className="h-5 w-5 mr-2" />
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="flex items-center text-base sm:text-lg">
+                    <Lock className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Méthode de paiement
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                     {paymentOptions.map((option) => (
-                      <div key={option.id} className="flex items-center space-x-2 p-3 border rounded-lg">
+                      <div key={option.id} className="flex items-center space-x-2 p-2 sm:p-3 border rounded-lg">
                         <RadioGroupItem value={option.id} id={option.id} />
                         <Label htmlFor={option.id} className="flex-1 cursor-pointer">
                           <div className="flex items-center">
-                            <option.icon className="h-5 w-5 mr-3 text-muted-foreground" />
+                            <option.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-muted-foreground" />
                             <div>
-                              <div className="font-medium">{option.name}</div>
-                              <div className="text-sm text-muted-foreground">{option.description}</div>
+                              <div className="font-medium text-sm sm:text-base">{option.name}</div>
+                              <div className="text-xs sm:text-sm text-muted-foreground">{option.description}</div>
                             </div>
                           </div>
                         </Label>
@@ -183,10 +452,10 @@ const CheckoutPage = () => {
 
               {/* Terms */}
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="terms" required />
-                    <Label htmlFor="terms" className="text-sm">
+                <CardContent className="pt-4 sm:pt-6">
+                  <div className="flex items-start space-x-2">
+                    <Checkbox id="terms" required className="mt-1" />
+                    <Label htmlFor="terms" className="text-xs sm:text-sm leading-relaxed">
                       J'accepte les{" "}
                       <a href="#" className="text-primary hover:underline">
                         conditions générales de vente
@@ -200,56 +469,70 @@ const CheckoutPage = () => {
                 </CardContent>
               </Card>
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 animate-ethiopian-pulse" size="lg">
-                <Lock className="h-4 w-4 mr-2" />
-                Payer {cartSummary.total}€
+              <Button 
+                type="submit" 
+                className="w-full bg-primary hover:bg-primary/90 animate-ethiopian-pulse text-sm sm:text-base py-2 sm:py-3" 
+                size="lg"
+                disabled={isCreatingOrder}
+              >
+                <Lock className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                {isCreatingOrder ? "Création de la commande..." : `Payer ${formatPrice(total)}`}
               </Button>
             </form>
           </div>
 
-          {/* Order Summary */}
+          {/* Order Summary - Responsive */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-20">
-              <CardHeader>
-                <CardTitle>Votre commande</CardTitle>
+            <Card className="sticky top-4 sm:top-20">
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="text-base sm:text-lg">Votre commande</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {cartSummary.items.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <div>
-                      <div className="font-medium">{item.name}</div>
-                      <div className="text-sm text-muted-foreground">Qté: {item.quantity}</div>
-                    </div>
-                    <span>{item.price}€</span>
+              <CardContent className="space-y-3 sm:space-y-4">
+                {isLoading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ethiopian-gold mx-auto"></div>
+                    <p className="mt-2 text-sm text-muted-foreground">Chargement du panier...</p>
                   </div>
-                ))}
-                
-                <Separator />
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Sous-total</span>
-                    <span>{cartSummary.subtotal}€</span>
-                  </div>
-                  {deliveryMethod === "livraison" && (
-                    <div className="flex justify-between">
-                      <span>Livraison</span>
-                      <span>{cartSummary.delivery}€</span>
+                ) : (
+                  <>
+                    {cartItems?.map((item, index) => (
+                      <div key={index} className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm sm:text-base truncate">{item.product.name}</div>
+                          <div className="text-xs sm:text-sm text-muted-foreground">Qté: {item.quantity}</div>
+                        </div>
+                        <span className="text-sm sm:text-base font-medium flex-shrink-0">{formatPrice(item.price * item.quantity)}</span>
+                      </div>
+                    ))}
+                    
+                    <Separator />
+                    
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm sm:text-base">
+                        <span>Sous-total</span>
+                        <span>{formatPrice(subtotal)}</span>
+                      </div>
+                      {deliveryMethod === "livraison" && (
+                        <div className="flex justify-between text-sm sm:text-base">
+                          <span>Livraison</span>
+                          <span>{formatPrice(deliveryFee)}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                
-                <Separator />
-                
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span className="text-ethiopian-green">{cartSummary.total}€</span>
-                </div>
+                    
+                    <Separator />
+                    
+                    <div className="flex justify-between text-base sm:text-lg font-bold">
+                      <span>Total</span>
+                      <span className="text-ethiopian-green">{formatPrice(total)}</span>
+                    </div>
+                  </>
+                )}
 
-                <div className="bg-muted/50 p-4 rounded-lg text-sm">
+                <div className="bg-muted/50 p-3 sm:p-4 rounded-lg text-xs sm:text-sm">
                   <div className="flex items-center mb-2">
-                    <Lock className="h-4 w-4 mr-2 text-ethiopian-green" />
-                    <span className="font-medium">Paiement sécurisé</span>
+                    <Lock className="h-3 w-3 sm:h-4 sm:w-4 mr-2 text-ethiopian-green" />
+                    <span className="font-medium text-xs sm:text-sm">Paiement sécurisé</span>
                   </div>
                   <p className="text-muted-foreground text-xs">
                     Vos informations de paiement sont cryptées et sécurisées selon les normes PCI DSS.

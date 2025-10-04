@@ -1,6 +1,6 @@
 // Configuration de l'environnement
 export const config = {
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  apiUrl: import.meta.env.VITE_API_URL || 'https://geezabackone.onrender.com/api',
   cloudinary: {
     cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dprbhsvxl',
     apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY || '',

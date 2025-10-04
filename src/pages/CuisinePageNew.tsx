@@ -1,13 +1,14 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Clock, Users, Filter, Search } from "lucide-react";
+import { Star, Clock, Users, Search, ChefHat, Flame, Utensils, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, useProductFilters } from "@/hooks/useProducts";
 import { ProductGrid } from "@/components/ProductGrid";
-import { ProductFiltersComponent } from "@/components/ProductFilters";
 import { useCartManager } from "@/hooks/useCart";
+import { EnhancedProductCard } from "@/components/EnhancedProductCard";
+import { DynamicDishCarousel } from "@/components/DynamicDishCarousel";
 
 const CuisinePage = () => {
   const { toast } = useToast();
@@ -17,6 +18,8 @@ const CuisinePage = () => {
   // Filtrer pour la catégorie cuisine
   const cuisineFilters = { ...filters, category: 'food' as const };
   const { data: productsData, isLoading, error } = useProducts(cuisineFilters);
+  
+  
 
   const categories = [
     { id: "tous", name: "Tous les plats" },
@@ -26,38 +29,24 @@ const CuisinePage = () => {
   ];
 
   const [selectedCategory, setSelectedCategory] = useState("tous");
-  const [showFilters, setShowFilters] = useState(false);
 
-  // Gérer les erreurs de chargement
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Erreur de chargement</h2>
-          <p className="text-muted-foreground mb-4">
-            Impossible de charger les produits. Vérifiez votre connexion.
-          </p>
-          <Button onClick={() => window.location.reload()}>
-            Réessayer
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
+  // Utiliser les données du backend uniquement
+  const products = productsData?.content || [];
+  
+  
   // Filtrer les produits selon la catégorie sélectionnée
-  const filteredProducts = productsData?.content?.filter(product => {
+  const filteredProducts = products.filter(product => {
     if (selectedCategory === "tous") return true;
     return product.subcategory === selectedCategory;
-  }) || [];
+  });
 
   const featuredProducts = filteredProducts.filter(product => product.isFeatured);
   const popularProducts = filteredProducts.filter(product => (product.totalSales || 0) > 10);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative h-96 bg-gradient-warm flex items-center justify-center text-white">
+      {/* Hero Section Immersif - Responsive */}
+      <section className="section-hero relative h-screen flex items-center justify-center text-white overflow-hidden">
         <div className="absolute inset-0 flex">
           <img 
             src="https://res.cloudinary.com/dprbhsvxl/image/upload/v1758300357/Geeza05_ui5m1p.jpg" 
@@ -65,124 +54,129 @@ const CuisinePage = () => {
             className="w-full h-full object-cover"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/60 via-black/60 to-blue-900/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ethiopian-red/80 via-spice-berbere/70 to-ethiopian-green/80" />
         
-        {/* Contenu du hero */}
-        <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Cuisine Éthiopienne Authentique
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-gray-200">
-            Découvrez les saveurs traditionnelles de l'Éthiopie
+        {/* Éléments décoratifs flottants - Responsive */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-16 sm:top-20 left-4 sm:left-10 w-4 sm:w-6 h-4 sm:h-6 bg-spice-gold rounded-full animate-spice-float opacity-60"></div>
+          <div className="absolute top-32 sm:top-40 right-8 sm:right-20 w-3 sm:w-4 h-3 sm:h-4 bg-ethiopian-yellow rounded-full animate-spice-float opacity-40 animate-delay-200"></div>
+          <div className="absolute bottom-24 sm:bottom-32 left-8 sm:left-20 w-4 sm:w-5 h-4 sm:h-5 bg-spice-saffron rounded-full animate-spice-float opacity-50 animate-delay-300"></div>
+          <div className="absolute bottom-16 sm:bottom-20 right-16 sm:right-32 w-2 sm:w-3 h-2 sm:h-3 bg-ethiopian-red rounded-full animate-spice-float opacity-30 animate-delay-400"></div>
+        </div>
+        
+        {/* Titre principal - Responsive */}
+        <div className="text-center mb-6 sm:mb-8 relative z-20 px-4 sm:ml-16 md:ml-24">
+          <div className="flex items-center justify-center mb-3 sm:mb-4">
+            <ChefHat className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-yellow-400 mr-2 sm:mr-4 animate-pulse" />
+            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white drop-shadow-2xl">
+              Cuisine <span className="text-yellow-400">Éthiopienne</span>
+            </h1>
+          </div>
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mx-auto drop-shadow-lg mb-4 sm:mb-6 px-2">
+            Découvrez nos plats authentiques qui se révèlent devant vos yeux
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-ethiopian-green hover:bg-ethiopian-green/90 text-white">
+        </div>
+
+        {/* Carrousel dynamique d'image ronde centrée */}
+        <div className="relative z-10 w-full">
+          <DynamicDishCarousel products={products} />
+          
+          {/* Bouton d'action centré - Responsive */}
+          <div className="flex justify-center mt-8 sm:mt-12 lg:mt-16 relative z-20 px-4">
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm sm:text-base lg:text-lg px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300 font-semibold w-full sm:w-auto max-w-xs sm:max-w-none"
+              onClick={() => document.getElementById('menu-section')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              <Utensils className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
               Commander maintenant
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-ethiopian-black">
-              Voir le menu
-            </Button>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+            <div className="w-1 h-3 bg-white/70 rounded-full mt-2 animate-pulse"></div>
           </div>
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-12">
-        {/* Barre de recherche et filtres */}
-        <div className="flex flex-col lg:flex-row gap-6 mb-8">
+      <div className="container mx-auto px-4 py-8 sm:py-12" id="menu-section">
+        {/* Barre de recherche améliorée - Responsive */}
+        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 mb-8 sm:mb-12 animate-cultural-slide-up">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Rechercher un plat..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ethiopian-green focus:border-transparent"
+                placeholder="Rechercher un plat traditionnel..."
+                className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-full focus:ring-2 focus:ring-ethiopian-green focus:border-transparent text-sm sm:text-base lg:text-lg transition-all duration-300 hover:border-ethiopian-green/50"
                 value={filters.search || ''}
                 onChange={(e) => updateFilters({ search: e.target.value })}
               />
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
-          >
-            <Filter className="h-4 w-4" />
-            Filtres
-          </Button>
         </div>
 
-        {/* Filtres avancés */}
-        {showFilters && (
-          <div className="mb-8">
-            <ProductFiltersComponent
-              filters={filters}
-              onFiltersChange={updateFilters}
-              onReset={resetFilters}
-            />
-          </div>
-        )}
-
-        {/* Categories Filter */}
-        <div className="flex flex-wrap gap-4 mb-8 justify-center">
-          {categories.map((category) => (
+        {/* Categories Filter améliorées - Responsive */}
+        <div className="flex flex-wrap gap-2 sm:gap-4 mb-8 sm:mb-12 justify-center animate-cultural-slide-up">
+          {categories.map((category, index) => (
             <Button
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"}
               onClick={() => setSelectedCategory(category.id)}
-              className="animate-cultural-fade"
+              className={`transition-all duration-300 animate-delay-${(index + 1) * 100} text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-3 ${
+                selectedCategory === category.id 
+                  ? 'ethiopian-button' 
+                  : 'border-ethiopian-green text-ethiopian-green hover:bg-ethiopian-green hover:text-white'
+              }`}
             >
               {category.name}
             </Button>
           ))}
         </div>
 
-        {/* Produits en vedette */}
-        {selectedCategory === "tous" && featuredProducts.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center mb-6">
-              <Star className="h-6 w-6 text-ethiopian-gold mr-2" />
-              <h2 className="text-2xl font-bold">Plats en vedette</h2>
+        {/* Produits en vedette - Responsive */}
+        {selectedCategory === "tous" && (
+          <div className="mb-12 sm:mb-16" id="featured-section">
+            <div className="flex items-center justify-center mb-8 sm:mb-12 animate-cultural-fade-in">
+              <Star className="h-6 w-6 sm:h-8 sm:w-8 text-spice-gold mr-2 sm:mr-4 animate-golden-glow" />
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold ethiopian-text-gradient">Plats en Vedette</h2>
+              <Star className="h-6 w-6 sm:h-8 sm:w-8 text-spice-gold ml-2 sm:ml-4 animate-golden-glow" />
             </div>
             
             {isLoading ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {[...Array(6)].map((_, index) => (
-                  <div key={index} className="animate-pulse">
-                    <div className="bg-gray-200 h-64 rounded-lg mb-4"></div>
-                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                    <div className="bg-gray-200 h-3 rounded w-2/3 mb-4"></div>
-                    <div className="flex justify-between items-center">
-                      <div className="bg-gray-200 h-6 w-16 rounded"></div>
-                      <div className="bg-gray-200 h-8 w-20 rounded"></div>
-                    </div>
-                  </div>
-                ))}
+              <ProductGrid products={[]} isLoading={true} skeletonCount={6} />
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Erreur de chargement des produits en vedette</p>
               </div>
-            ) : (
+            ) : featuredProducts.length > 0 ? (
               <ProductGrid
                 products={featuredProducts}
                 onViewDetails={(product) => {
-                  console.log('Voir détails:', product);
+                  // TODO: Implémenter la vue des détails
                 }}
                 showAddToCart={true}
                 showWishlist={true}
               />
-            )}
+            ) : null}
           </div>
         )}
 
-        {/* Produits populaires */}
-        {selectedCategory === "tous" && popularProducts.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center mb-6">
-              <Users className="h-6 w-6 text-ethiopian-red mr-2" />
-              <h2 className="text-2xl font-bold">Plats les plus vendus</h2>
+        {/* Produits populaires - Responsive */}
+        {selectedCategory === "tous" && !isLoading && !error && popularProducts.length > 0 && (
+          <div className="mb-8 sm:mb-12">
+            <div className="flex items-center mb-4 sm:mb-6">
+              <Users className="h-5 w-5 sm:h-6 sm:w-6 text-ethiopian-red mr-2" />
+              <h2 className="text-xl sm:text-2xl font-bold">Plats les plus vendus</h2>
             </div>
             
             <ProductGrid
               products={popularProducts}
               onViewDetails={(product) => {
-                console.log('Voir détails:', product);
+                // TODO: Implémenter la vue des détails
               }}
               showAddToCart={true}
               showWishlist={true}
@@ -190,36 +184,29 @@ const CuisinePage = () => {
           </div>
         )}
 
-        {/* Tous les produits de la catégorie */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">
+
+        {/* Tous les produits de la catégorie - Responsive */}
+        <div className="mb-8 sm:mb-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+            <h2 className="text-xl sm:text-2xl font-bold">
               {selectedCategory === "tous" ? "Tous les plats" : categories.find(c => c.id === selectedCategory)?.name}
             </h2>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs sm:text-sm text-muted-foreground">
               {filteredProducts.length} produit{filteredProducts.length > 1 ? 's' : ''}
             </div>
           </div>
           
           {isLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, index) => (
-                <div key={index} className="animate-pulse">
-                  <div className="bg-gray-200 h-64 rounded-lg mb-4"></div>
-                  <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                  <div className="bg-gray-200 h-3 rounded w-2/3 mb-4"></div>
-                  <div className="flex justify-between items-center">
-                    <div className="bg-gray-200 h-6 w-16 rounded"></div>
-                    <div className="bg-gray-200 h-8 w-20 rounded"></div>
-                  </div>
-                </div>
-              ))}
+            <ProductGrid products={[]} isLoading={true} skeletonCount={8} />
+          ) : error ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Erreur de chargement des produits</p>
             </div>
           ) : filteredProducts.length > 0 ? (
             <ProductGrid
               products={filteredProducts}
               onViewDetails={(product) => {
-                console.log('Voir détails:', product);
+                // TODO: Implémenter la vue des détails
               }}
               showAddToCart={true}
               showWishlist={true}
@@ -259,6 +246,7 @@ const CuisinePage = () => {
           </div>
         )}
       </div>
+      
     </div>
   );
 };

@@ -1,10 +1,10 @@
 // Configuration de l'API
 export const API_CONFIG = {
   // URL de base de l'API
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  BASE_URL: import.meta.env.VITE_API_URL || 'https://geezabackone.onrender.com/api',
   
   // Timeouts
-  TIMEOUT: 10000, // 10 secondes
+  TIMEOUT: 15000, // 15 secondes
   
   // Configuration des retry
   MAX_RETRIES: 3,

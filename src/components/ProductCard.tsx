@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Heart, Eye, Star } from 'lucide-react';
 import { Product } from '@/services/productService';
 import { useToast } from '@/hooks/use-toast';
-import { cartService } from '@/services/cartService';
+import { useCartManager } from '@/hooks/useCart';
+import { formatPrice, getPreferredCurrency, Currency } from '@/utils/currency';
 
 interface ProductCardProps {
   product: Product;
@@ -23,26 +24,30 @@ export const ProductCard = ({
   className = ''
 }: ProductCardProps) => {
   const { toast } = useToast();
+  const { addToCart } = useCartManager();
   const [isLoading, setIsLoading] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [currentCurrency, setCurrentCurrency] = useState<Currency>(getPreferredCurrency());
+
+  // Écouter les changements de devise
+  useEffect(() => {
+    const handleCurrencyChange = () => {
+      setCurrentCurrency(getPreferredCurrency());
+    };
+    
+    window.addEventListener('currencyChanged', handleCurrencyChange);
+    
+    return () => {
+      window.removeEventListener('currencyChanged', handleCurrencyChange);
+    };
+  }, []);
 
   const handleAddToCart = async () => {
     if (!product.available) return;
     
     setIsLoading(true);
     try {
-      // Vérifier si l'utilisateur est connecté
-      const token = localStorage.getItem('token');
-      
-      if (token) {
-        await cartService.addToCart({
-          productId: product.id,
-          quantity: 1
-        });
-      } else {
-        // Utiliser le panier local
-        cartService.addToLocalCart(product, 1);
-      }
+      await addToCart(product, 1);
 
       toast({
         title: "Produit ajouté au panier",
@@ -73,12 +78,6 @@ export const ProductCard = ({
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(price);
-  };
 
   const renderRating = (rating?: number) => {
     if (!rating) return null;
@@ -193,7 +192,7 @@ export const ProductCard = ({
       <CardFooter className="flex items-center justify-between pt-0">
         <div className="flex flex-col">
           <span className="text-2xl font-bold text-ethiopian-green">
-            {formatPrice(product.price)}
+            {formatPrice(product.price, currentCurrency)}
           </span>
           {product.stock > 0 && (
             <span className="text-xs text-muted-foreground">

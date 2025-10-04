@@ -9,7 +9,15 @@ export const useCart = () => {
   
   return useQuery({
     queryKey: ['cart'],
-    queryFn: () => cartService.getCart(),
+    queryFn: async () => {
+      try {
+        const result = await cartService.getCart();
+        return result || { id: 0, userId: 0, items: [], totalItems: 0, totalPrice: 0, createdAt: '', updatedAt: '' };
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+        return { id: 0, userId: 0, items: [], totalItems: 0, totalPrice: 0, createdAt: '', updatedAt: '' };
+      }
+    },
     enabled: isAuthenticated,
     staleTime: 1 * 60 * 1000, // 1 minute
   });
@@ -20,7 +28,15 @@ export const useCartItemCount = () => {
   
   return useQuery({
     queryKey: ['cart', 'count'],
-    queryFn: () => cartService.getCartItemCount(),
+    queryFn: async () => {
+      try {
+        const result = await cartService.getCartItemCount();
+        return result || 0;
+      } catch (error) {
+        console.error('Error fetching cart count:', error);
+        return 0;
+      }
+    },
     enabled: isAuthenticated,
     staleTime: 30 * 1000, // 30 seconds
   });
@@ -122,36 +138,6 @@ export const useLocalCart = () => {
   const [localCartTotal, setLocalCartTotal] = useState(0);
   const [localCartItemCount, setLocalCartItemCount] = useState(0);
 
-  useEffect(() => {
-    const items = cartService.getLocalCartItems();
-    const total = cartService.getLocalCartTotal();
-    const count = cartService.getLocalCartItemCount();
-    
-    setLocalCartItems(items);
-    setLocalCartTotal(total);
-    setLocalCartItemCount(count);
-  }, []);
-
-  const addToLocalCart = (product: any, quantity: number = 1) => {
-    cartService.addToLocalCart(product, quantity);
-    updateLocalCartState();
-  };
-
-  const removeFromLocalCart = (productId: number) => {
-    cartService.removeFromLocalCart(productId);
-    updateLocalCartState();
-  };
-
-  const updateLocalCartItem = (productId: number, quantity: number) => {
-    cartService.updateLocalCartItem(productId, quantity);
-    updateLocalCartState();
-  };
-
-  const clearLocalCart = () => {
-    cartService.clearLocalCart();
-    updateLocalCartState();
-  };
-
   const updateLocalCartState = () => {
     const items = cartService.getLocalCartItems();
     const total = cartService.getLocalCartTotal();
@@ -160,6 +146,61 @@ export const useLocalCart = () => {
     setLocalCartItems(items);
     setLocalCartTotal(total);
     setLocalCartItemCount(count);
+  };
+
+  useEffect(() => {
+    // Charger l'état initial
+    updateLocalCartState();
+
+    // Écouter les changements de localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'localCart') {
+        updateLocalCartState();
+      }
+    };
+
+    // Écouter les changements de localStorage
+    window.addEventListener('storage', handleStorageChange);
+
+    // Écouter les changements personnalisés (pour les mêmes onglets)
+    const handleCustomStorageChange = () => {
+      updateLocalCartState();
+    };
+
+    window.addEventListener('localCartChanged', handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('localCartChanged', handleCustomStorageChange);
+    };
+  }, []);
+
+  const addToLocalCart = (product: any, quantity: number = 1) => {
+    cartService.addToLocalCart(product, quantity);
+    updateLocalCartState();
+    // Déclencher un événement personnalisé pour notifier les autres composants
+    window.dispatchEvent(new CustomEvent('localCartChanged'));
+  };
+
+  const removeFromLocalCart = (productId: number) => {
+    cartService.removeFromLocalCart(productId);
+    updateLocalCartState();
+    // Déclencher un événement personnalisé pour notifier les autres composants
+    window.dispatchEvent(new CustomEvent('localCartChanged'));
+  };
+
+  const updateLocalCartItem = (productId: number, quantity: number) => {
+    cartService.updateLocalCartItem(productId, quantity);
+    updateLocalCartState();
+    // Déclencher un événement personnalisé pour notifier les autres composants
+    window.dispatchEvent(new CustomEvent('localCartChanged'));
+  };
+
+  const clearLocalCart = () => {
+    cartService.clearLocalCart();
+    updateLocalCartState();
+    // Déclencher un événement personnalisé pour notifier les autres composants
+    window.dispatchEvent(new CustomEvent('localCartChanged'));
   };
 
   return {
@@ -175,58 +216,188 @@ export const useLocalCart = () => {
 
 // Hook principal pour gérer le panier (authentifié ou local)
 export const useCartManager = () => {
+  const queryClient = useQueryClient();
   const isAuthenticated = authService.isAuthenticated();
   const { data: cart, isLoading: cartLoading } = useCart();
   const { data: cartItemCount, isLoading: countLoading } = useCartItemCount();
   const localCart = useLocalCart();
+  
+  // Mutations pour les utilisateurs connectés
+  const addToCartMutation = useAddToCart();
+  const updateCartItemMutation = useUpdateCartItem();
+  const removeFromCartMutation = useRemoveFromCart();
+  const clearCartMutation = useClearCart();
 
-  const addToCart = (product: any, quantity: number = 1) => {
-    if (isAuthenticated) {
-      // Utiliser l'API pour les utilisateurs connectés
-      // Note: Vous devrez implémenter la mutation ici
-      console.log('Adding to authenticated cart:', product, quantity);
-    } else {
-      // Utiliser le panier local
+  // Écouter les changements du panier local
+  useEffect(() => {
+    const handleLocalCartChange = () => {
+      // Le panier local se met déjà à jour automatiquement
+    };
+
+    window.addEventListener('localCartChanged', handleLocalCartChange);
+    
+    return () => {
+      window.removeEventListener('localCartChanged', handleLocalCartChange);
+    };
+  }, []);
+
+  const addToCart = async (product: any, quantity: number = 1) => {
+    try {
+      if (isAuthenticated) {
+        try {
+          await addToCartMutation.mutateAsync({
+            productId: product.id,
+            quantity
+          });
+          // Forcer la mise à jour immédiate
+          queryClient.invalidateQueries({ queryKey: ['cart'] });
+          queryClient.invalidateQueries({ queryKey: ['cart', 'count'] });
+          // Rafraîchir immédiatement les données
+          await queryClient.refetchQueries({ queryKey: ['cart'] });
+          await queryClient.refetchQueries({ queryKey: ['cart', 'count'] });
+        } catch (error: any) {
+          // Si erreur d'authentification, nettoyer et utiliser le panier local
+          if (error.message?.includes('401')) {
+            authService.clearAuth();
+          }
+          
+          // Fallback vers le panier local
+          localCart.addToLocalCart(product, quantity);
+          // Forcer la mise à jour de l'état local
+          window.dispatchEvent(new CustomEvent('localCartChanged'));
+        }
+      } else {
+        // Utiliser le panier local
+        localCart.addToLocalCart(product, quantity);
+        // Forcer la mise à jour de l'état local
+        window.dispatchEvent(new CustomEvent('localCartChanged'));
+      }
+    } catch (error) {
+      // En dernier recours, utiliser le panier local
       localCart.addToLocalCart(product, quantity);
+      // Forcer la mise à jour de l'état local
+      window.dispatchEvent(new CustomEvent('localCartChanged'));
     }
   };
 
-  const removeFromCart = (productId: number) => {
+  const removeFromCart = async (productId: number) => {
     if (isAuthenticated) {
-      // Utiliser l'API pour les utilisateurs connectés
-      console.log('Removing from authenticated cart:', productId);
+      try {
+        // Trouver l'ID de l'item dans le panier
+        const cartItem = cart?.items?.find(item => item.productId === productId);
+        if (cartItem) {
+          await removeFromCartMutation.mutateAsync(cartItem.id);
+          // Forcer la mise à jour immédiate
+          queryClient.invalidateQueries({ queryKey: ['cart'] });
+          queryClient.invalidateQueries({ queryKey: ['cart', 'count'] });
+          // Rafraîchir immédiatement les données
+          await queryClient.refetchQueries({ queryKey: ['cart'] });
+          await queryClient.refetchQueries({ queryKey: ['cart', 'count'] });
+        }
+      } catch (error) {
+        // Fallback vers le panier local
+        localCart.removeFromLocalCart(productId);
+        // Forcer la mise à jour de l'état local
+        window.dispatchEvent(new CustomEvent('localCartChanged'));
+      }
     } else {
       // Utiliser le panier local
       localCart.removeFromLocalCart(productId);
+      // Forcer la mise à jour de l'état local
+      window.dispatchEvent(new CustomEvent('localCartChanged'));
     }
   };
 
-  const updateCartItem = (productId: number, quantity: number) => {
+  const updateCartItem = async (productId: number, quantity: number) => {
     if (isAuthenticated) {
-      // Utiliser l'API pour les utilisateurs connectés
-      console.log('Updating authenticated cart item:', productId, quantity);
+      try {
+        // Trouver l'ID de l'item dans le panier
+        const cartItem = cart?.items?.find(item => item.productId === productId);
+        if (cartItem) {
+          await updateCartItemMutation.mutateAsync({
+            itemId: cartItem.id,
+            quantity
+          });
+          // Forcer la mise à jour immédiate
+          queryClient.invalidateQueries({ queryKey: ['cart'] });
+          queryClient.invalidateQueries({ queryKey: ['cart', 'count'] });
+          // Rafraîchir immédiatement les données
+          await queryClient.refetchQueries({ queryKey: ['cart'] });
+          await queryClient.refetchQueries({ queryKey: ['cart', 'count'] });
+        }
+      } catch (error: any) {
+        // Gestion spécifique des erreurs 500
+        if (error.message?.includes('500') || 
+            error.message?.includes('Erreur serveur') || 
+            error.message?.includes('Internal Server Error')) {
+          // En cas d'erreur serveur, utiliser le panier local et continuer
+          localCart.updateLocalCartItem(productId, quantity);
+          // Forcer la mise à jour de l'état local
+          window.dispatchEvent(new CustomEvent('localCartChanged'));
+          // Invalider les queries pour forcer une resynchronisation plus tard
+          queryClient.invalidateQueries({ queryKey: ['cart'] });
+          queryClient.invalidateQueries({ queryKey: ['cart', 'count'] });
+          // Ne pas relancer l'exception, le fallback local gère
+          return;
+        } else {
+          // Pour les autres erreurs, fallback vers le panier local
+          localCart.updateLocalCartItem(productId, quantity);
+          // Forcer la mise à jour de l'état local
+          window.dispatchEvent(new CustomEvent('localCartChanged'));
+        }
+      }
     } else {
       // Utiliser le panier local
       localCart.updateLocalCartItem(productId, quantity);
+      // Forcer la mise à jour de l'état local
+      window.dispatchEvent(new CustomEvent('localCartChanged'));
     }
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     if (isAuthenticated) {
-      // Utiliser l'API pour les utilisateurs connectés
-      console.log('Clearing authenticated cart');
+      try {
+        await clearCartMutation.mutateAsync();
+      } catch (error) {
+        // Fallback vers le panier local
+        localCart.clearLocalCart();
+        // Forcer la mise à jour de l'état local
+        window.dispatchEvent(new CustomEvent('localCartChanged'));
+      }
     } else {
       // Utiliser le panier local
       localCart.clearLocalCart();
+      // Forcer la mise à jour de l'état local
+      window.dispatchEvent(new CustomEvent('localCartChanged'));
     }
   };
 
+  // Calculer le total côté frontend pour plus de fiabilité
+  const calculateCartTotal = () => {
+    // Toujours utiliser le panier local si disponible, sinon le panier serveur
+    const items = localCart.localCartItems.length > 0 ? localCart.localCartItems : (cart?.items || []);
+    if (!items || items.length === 0) return 0;
+    
+    return items.reduce((total, item) => {
+      const itemTotal = (item.price || 0) * (item.quantity || 0);
+      return total + itemTotal;
+    }, 0);
+  };
+
+  const calculateCartItemCount = () => {
+    // Toujours utiliser le panier local si disponible, sinon le panier serveur
+    const items = localCart.localCartItems.length > 0 ? localCart.localCartItems : (cart?.items || []);
+    if (!items || items.length === 0) return 0;
+    
+    return items.reduce((count, item) => count + (item.quantity || 0), 0);
+  };
+
   return {
-    // Données du panier
+    // Données du panier - priorité au panier local si disponible
     cart: isAuthenticated ? cart : null,
-    cartItems: isAuthenticated ? cart?.items : localCart.localCartItems,
-    cartTotal: isAuthenticated ? cart?.totalPrice : localCart.localCartTotal,
-    cartItemCount: isAuthenticated ? cartItemCount : localCart.localCartItemCount,
+    cartItems: localCart.localCartItems.length > 0 ? localCart.localCartItems : (isAuthenticated ? cart?.items : localCart.localCartItems),
+    cartTotal: calculateCartTotal(), // Calcul côté frontend
+    cartItemCount: calculateCartItemCount(), // Calcul côté frontend
     
     // États de chargement
     isLoading: isAuthenticated ? (cartLoading || countLoading) : false,

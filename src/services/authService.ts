@@ -1,4 +1,5 @@
 import { apiService, ApiResponse } from './api';
+import { LocalStorageUtils } from '../utils/localStorageUtils';
 
 export interface User {
   id: number;
@@ -7,7 +8,7 @@ export interface User {
   lastName: string;
   phone?: string;
   address?: Address;
-  role: 'USER' | 'ADMIN' | 'SHOP_OWNER';
+  role: 'USER' | 'ADMIN' | 'CLIENT';
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -31,6 +32,15 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   phone?: string;
+  address?: string;
+}
+
+export interface AdminRegisterRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: string;
 }
 
 export interface AuthResponse {
@@ -59,6 +69,9 @@ class AuthService {
     this.setToken(response.data.token);
     this.setUser(response.data.user);
     
+    // Déclencher un événement pour signaler la connexion
+    window.dispatchEvent(new CustomEvent('userLoggedIn'));
+    
     return response.data;
   }
 
@@ -68,6 +81,9 @@ class AuthService {
     // Stocker le token et les informations utilisateur
     this.setToken(response.data.token);
     this.setUser(response.data.user);
+    
+    // Déclencher un événement pour signaler la connexion
+    window.dispatchEvent(new CustomEvent('userLoggedIn'));
     
     return response.data;
   }
@@ -97,6 +113,18 @@ class AuthService {
     return response.data;
   }
 
+  async testAuth(): Promise<{authenticated: boolean, user?: User}> {
+    try {
+      console.log('🔍 Test d\'authentification - Token présent:', !!this.getToken());
+      const user = await this.getCurrentUser();
+      console.log('✅ Utilisateur récupéré:', user.email, 'Rôle:', user.role);
+      return { authenticated: true, user };
+    } catch (error) {
+      console.error('❌ Test auth failed:', error);
+      return { authenticated: false };
+    }
+  }
+
   async updateProfile(userData: Partial<User>): Promise<User> {
     const response = await apiService.put<User>('/auth/profile', userData);
     this.setUser(response.data);
@@ -120,20 +148,19 @@ class AuthService {
 
   // Gestion locale du token et de l'utilisateur
   setToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
+    LocalStorageUtils.setItem(this.TOKEN_KEY, token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return LocalStorageUtils.getItem(this.TOKEN_KEY);
   }
 
   setUser(user: User): void {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    LocalStorageUtils.setJSONItem(this.USER_KEY, user);
   }
 
   getUser(): User | null {
-    const user = localStorage.getItem(this.USER_KEY);
-    return user ? JSON.parse(user) : null;
+    return LocalStorageUtils.getJSONItem<User>(this.USER_KEY);
   }
 
   clearAuth(): void {
@@ -152,12 +179,17 @@ class AuthService {
 
   isShopOwner(): boolean {
     const user = this.getUser();
-    return user?.role === 'SHOP_OWNER';
+    return user?.role === 'CLIENT';
   }
 
   hasRole(role: string): boolean {
     const user = this.getUser();
     return user?.role === role;
+  }
+
+  // Créer un compte administrateur
+  async registerAdmin(data: AdminRegisterRequest): Promise<ApiResponse<string>> {
+    return apiService.post('/auth/create-admin', data);
   }
 
   // Vérifier si le token est expiré

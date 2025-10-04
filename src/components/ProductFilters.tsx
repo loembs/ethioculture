@@ -134,12 +134,17 @@ export const ProductFiltersComponent = ({
                 <SelectValue placeholder="Toutes les sous-catégories" />
               </SelectTrigger>
               <SelectContent>
+              (4, 'Oeuvres', 2),
+                                                      (5, 'Tableaux', 2),
+                                                      (6, 'Sculptures', 2),
+                                                      (7, 'Accessoires décoratifs', 2),
+                                                      (8, 'Evenements', 2);
                 <SelectItem value="">Toutes les sous-catégories</SelectItem>
-                <SelectItem value="plats-principaux">Plats principaux</SelectItem>
-                <SelectItem value="entrees">Entrées</SelectItem>
-                <SelectItem value="desserts">Desserts</SelectItem>
-                <SelectItem value="boissons">Boissons</SelectItem>
-                <SelectItem value="epices">Épices</SelectItem>
+                <SelectItem value="Oeuvres">Oeuvres</SelectItem>
+                <SelectItem value="Tableaux">Tableaux</SelectItem>
+                <SelectItem value="Sculptures">Sculptures</SelectItem>
+                <SelectItem value="Accessoires décoratifs">Accessoires décoratifs</SelectItem>
+                <SelectItem value="Evenements">Evenements</SelectItem>
               </SelectContent>
             </Select>
           </div>

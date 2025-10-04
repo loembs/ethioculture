@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import du thème éthiopien amélioré */
+@import './styles/ethiopian-theme.css';
+
 /* Ethiopian Cultural Design System - Couleurs authentiques inspirées du drapeau et de la culture éthiopienne */
 
 @layer base {

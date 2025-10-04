@@ -7,7 +7,12 @@ export const useProducts = (filters?: ProductFilters) => {
   return useQuery({
     queryKey: ['products', filters],
     queryFn: () => productService.getAllProducts(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    retry: 1, // Une seule tentative de retry
+    retryDelay: 1000, // 1 seconde de délai
+    refetchOnWindowFocus: false, // Ne pas refetch automatiquement
+    refetchOnMount: false, // Ne pas refetch au montage si les données sont en cache
   });
 };
 
@@ -30,6 +35,12 @@ export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: ['products', 'featured'],
     queryFn: () => productService.getFeaturedProducts(),
+    staleTime: 15 * 60 * 1000, // 15 minutes
+    gcTime: 60 * 60 * 1000, // 1 heure
+    retry: 1,
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 };
 

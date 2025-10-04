@@ -1,73 +1,83 @@
-# Welcome to your Lovable project
+# EthioCulture - Cuisine Éthiopienne & Art Authentique
 
-## Project info
+Cette application web présente l'authenticité de la culture éthiopienne à travers une sélection de plats traditionnels et d'œuvres d'art uniques.
 
-**URL**: https://lovable.dev/projects/a1886bc5-d76e-4946-9669-0415b2033c71
+## Fonctionnalités
 
-## How can I edit this code?
+- **Cuisine Éthiopienne** : Plats traditionnels authentiques
+- **Art & Culture** : Galerie d'œuvres d'art éthiopiennes
+- **E-commerce** : Système de commande et de paiement
+- **Authentification** : Gestion des utilisateurs et des sessions
+- **Profil** : Gestion des commandes et des informations personnelles
 
-There are several ways of editing your application.
+## Technologies
 
-**Use Lovable**
+- **Frontend** : React, TypeScript, Vite, Tailwind CSS
+- **Backend** : Spring Boot, Java 17
+- **Base de données** : PostgreSQL
+- **Cache** : Redis
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a1886bc5-d76e-4946-9669-0415b2033c71) and start prompting.
+## Démarrage Local
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prérequis
+- Node.js 18+ et npm
+- Java 17+
+- PostgreSQL
+- Redis
 
-**Use your preferred IDE**
+### Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. **Backend** : 
+   ```bash
+   cd geezaback
+   mvn clean install
+   mvn spring-boot:run
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. **Frontend** :
+   ```bash
+   cd ethioculture
+   npm install
+   npm run dev
+   ```
 
-Follow these steps:
+3. **Configuration** :
+   - Configurer PostgreSQL
+   - Configurer Redis
+   - Mettre à jour les fichiers de configuration
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Structure du Projet
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+ethioculture/
+├── ethioculture/          # Frontend React
+│   ├── src/
+│   │   ├── components/    # Composants React
+│   │   ├── pages/         # Pages de l'application
+│   │   ├── services/      # Services API
+│   │   └── utils/         # Utilitaires
+│   └── public/            # Assets statiques
+├── geezaback/             # Backend Spring Boot
+│   └── src/main/java/     # Code source Java
+└── README.md
 ```
 
-**Edit a file directly in GitHub**
+## Déploiement
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Frontend
+L'application frontend peut être déployée sur Vercel, Netlify ou tout hébergeur statique.
 
-**Use GitHub Codespaces**
+### Backend
+Le backend peut être déployé sur Render, Heroku ou tout service Java.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Contribution
 
-## What technologies are used for this project?
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/nouvelle-fonctionnalite`)
+3. Commit les changements (`git commit -am 'Ajouter nouvelle fonctionnalité'`)
+4. Push vers la branche (`git push origin feature/nouvelle-fonctionnalite`)
+5. Créer une Pull Request
 
-This project is built with:
+## Licence
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a1886bc5-d76e-4946-9669-0415b2033c71) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Ce projet est sous licence MIT. Voir le fichier LICENSE pour plus de détails.

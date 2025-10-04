@@ -238,7 +238,7 @@ const UserProfile = () => {
                               <div className="text-right">
                                 {getStatusBadge(order.status)}
                                 <p className="text-lg font-bold mt-1">
-                                  {order.totalAmount.toFixed(2)}€
+                                  {formatPrice(order.totalAmount)}
                                 </p>
                               </div>
                             </div>

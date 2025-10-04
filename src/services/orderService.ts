@@ -129,8 +129,27 @@ class OrderService {
   }
 
   async getOrderHistory(): Promise<Order[]> {
-    const response = await apiService.get<Order[]>('/orders/history');
-    return response.data;
+    const response = await apiService.get<{ data: Order[] }>('/orders/history');
+    const orders = response.data.data;
+    
+    console.log('🔍 Raw orders from backend:', orders);
+    
+    // Mapper les commandes pour corriger les noms de champs
+    return orders.map(order => {
+      
+      return {
+        ...order,
+        // Utiliser les items réels de la commande
+        items: order.items && order.items.length > 0 ? order.items.map(item => ({
+          ...item,
+          product: {
+            ...item.product,
+            image: (item.product as any)?.imageUrl || item.product?.image || '/placeholder.svg',
+            category: (item.product as any)?.categoryId === 1 ? 'food' : 'art'
+          }
+        })) : []
+      };
+    });
   }
 
   async getOrderStatistics(): Promise<{
@@ -139,8 +158,29 @@ class OrderService {
     pendingOrders: number;
     completedOrders: number;
   }> {
-    const response = await apiService.get('/orders/statistics');
-    return response.data;
+    try {
+      // Calculer les statistiques à partir de l'historique des commandes
+      const orders = await this.getOrderHistory();
+      
+      const stats = {
+        totalOrders: orders.length,
+        totalRevenue: orders.reduce((sum, order) => sum + order.totalAmount, 0),
+        pendingOrders: orders.filter(order => order.status === OrderStatus.PENDING).length,
+        completedOrders: orders.filter(order => 
+          order.status === OrderStatus.DELIVERED || order.status === OrderStatus.SHIPPED
+        ).length
+      };
+      
+      return stats;
+    } catch (error) {
+      console.warn('Erreur lors du calcul des statistiques:', error);
+      return {
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+        completedOrders: 0
+      };
+    }
   }
 
   // Méthodes pour les administrateurs
@@ -190,14 +230,25 @@ class OrderService {
     return labels[status] || status;
   }
 
-  getPaymentMethodLabel(method: PaymentMethod): string {
+  getPaymentMethodLabel(method: PaymentMethod | string): string {
+    // Gérer les méthodes de paiement personnalisées
+    if (typeof method === 'string') {
+      const customLabels: Record<string, string> = {
+        'stripe': 'Carte de crédit',
+        'card': 'Carte de crédit',
+        'credit_card': 'Carte de crédit',
+        'CREDIT_CARD': 'Carte de crédit'
+      };
+      return customLabels[method.toLowerCase()] || customLabels[method] || method;
+    }
+    
     const labels = {
       [PaymentMethod.CREDIT_CARD]: 'Carte de crédit',
       [PaymentMethod.PAYPAL]: 'PayPal',
       [PaymentMethod.BANK_TRANSFER]: 'Virement bancaire',
       [PaymentMethod.CASH_ON_DELIVERY]: 'Paiement à la livraison'
     };
-    return labels[method] || method;
+    return labels[method] || String(method);
   }
 }
 
