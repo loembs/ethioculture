@@ -45,13 +45,33 @@ class ApiService {
       
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
       
+      // Vérifier le content-type avant de parser
+      const contentType = response.headers.get('content-type');
+      const hasJson = contentType && contentType.includes('application/json');
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Capturer le corps de la réponse même en cas d'erreur
+        let errorData = null;
+        if (hasJson) {
+          try {
+            errorData = await response.json();
+          } catch (e) {
+            // Si on ne peut pas parser le JSON, continuer
+          }
+        }
+        
+        // Créer une erreur enrichie avec les données de la réponse
+        const error: any = new Error(`HTTP error! status: ${response.status}`);
+        error.status = response.status;
+        error.response = {
+          status: response.status,
+          data: errorData
+        };
+        throw error;
       }
       
       // Vérifier si la réponse a du contenu
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
+      if (!hasJson) {
         return { data: null as unknown as T, success: true };
       }
       

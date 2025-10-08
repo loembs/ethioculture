@@ -203,17 +203,19 @@ const CheckoutPage = () => {
         count: orderData.items.length,
         items: orderData.items
       });
-      console.log('🔍 Shipping Address:', {
-        firstName: orderData.shippingAddress.firstName,
-        lastName: orderData.shippingAddress.lastName,
-        street: orderData.shippingAddress.street,
-        city: orderData.shippingAddress.city,
-        postalCode: orderData.shippingAddress.postalCode,
-        country: orderData.shippingAddress.country,
-        phone: orderData.shippingAddress.phone
-      });
+      console.log('🔍 Shipping Address:', orderData.shippingAddress);
       console.log('🔍 Payment Method:', orderData.paymentMethod);
       console.log('🔍 Notes:', orderData.notes);
+      
+      // Vérifier chaque champ individuellement
+      console.log('🔍 Field validation:');
+      console.log('  - firstName:', orderData.shippingAddress.firstName, '(length:', orderData.shippingAddress.firstName?.length, ')');
+      console.log('  - lastName:', orderData.shippingAddress.lastName, '(length:', orderData.shippingAddress.lastName?.length, ')');
+      console.log('  - street:', orderData.shippingAddress.street, '(length:', orderData.shippingAddress.street?.length, ')');
+      console.log('  - city:', orderData.shippingAddress.city, '(length:', orderData.shippingAddress.city?.length, ')');
+      console.log('  - postalCode:', orderData.shippingAddress.postalCode, '(length:', orderData.shippingAddress.postalCode?.length, ')');
+      console.log('  - country:', orderData.shippingAddress.country, '(length:', orderData.shippingAddress.country?.length, ')');
+      console.log('  - phone:', orderData.shippingAddress.phone, '(length:', orderData.shippingAddress.phone?.length, ')');
       console.log('🔍 ==========================================');
 
       // Validation côté client
