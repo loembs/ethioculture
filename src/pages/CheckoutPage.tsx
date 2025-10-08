@@ -166,11 +166,16 @@ const CheckoutPage = () => {
       const mapPaymentMethod = (method: string): string => {
         const mapping: Record<string, string> = {
           'carte': 'CREDIT_CARD',
+          'stripe': 'CREDIT_CARD',
           'paypal': 'PAYPAL',
           'virement': 'BANK_TRANSFER',
-          'livraison': 'CASH_ON_DELIVERY'
+          'livraison': 'CASH_ON_DELIVERY',
+          'wave': 'CASH_ON_DELIVERY',  // Temporaire jusqu'à ajout dans le backend
+          'orange': 'CASH_ON_DELIVERY'  // Temporaire jusqu'à ajout dans le backend
         };
-        return mapping[method.toLowerCase()] || 'CREDIT_CARD';
+        const mapped = mapping[method.toLowerCase()] || 'CREDIT_CARD';
+        console.log('🔍 Payment method mapping:', { original: method, mapped });
+        return mapped;
       };
 
       // Préparer les données de commande
@@ -180,31 +185,36 @@ const CheckoutPage = () => {
           quantity: item.quantity
         })),
         shippingAddress: {
-          firstName: shippingInfo.firstName,
-          lastName: shippingInfo.lastName,
-          street: shippingInfo.address,
-          city: shippingInfo.city,
-          country: shippingInfo.country,
-          postalCode: shippingInfo.postalCode,
-          phone: shippingInfo.phone
+          firstName: shippingInfo.firstName.trim(),
+          lastName: shippingInfo.lastName.trim(),
+          street: shippingInfo.address.trim(),
+          city: shippingInfo.city.trim(),
+          country: shippingInfo.country.trim(),
+          postalCode: shippingInfo.postalCode.trim(),
+          phone: shippingInfo.phone.trim()
         },
         paymentMethod: mapPaymentMethod(paymentMethod) as any,
-        notes: shippingInfo.notes
+        notes: shippingInfo.notes ? shippingInfo.notes.trim() : undefined
       };
 
-      console.log('🔍 Order data being sent:', {
-        items: orderData.items,
-        itemsCount: orderData.items.length,
-        shippingAddress: orderData.shippingAddress,
-        paymentMethod: orderData.paymentMethod,
-        notes: orderData.notes
+      console.log('🔍 ===== ORDER DATA BEING SENT TO BACKEND =====');
+      console.log('🔍 Full orderData:', JSON.stringify(orderData, null, 2));
+      console.log('🔍 Items:', {
+        count: orderData.items.length,
+        items: orderData.items
       });
-
-      console.log('🔍 Cart items before mapping:', cartItems);
-      console.log('🔍 Payment method mapping:', {
-        original: paymentMethod,
-        mapped: mapPaymentMethod(paymentMethod)
+      console.log('🔍 Shipping Address:', {
+        firstName: orderData.shippingAddress.firstName,
+        lastName: orderData.shippingAddress.lastName,
+        street: orderData.shippingAddress.street,
+        city: orderData.shippingAddress.city,
+        postalCode: orderData.shippingAddress.postalCode,
+        country: orderData.shippingAddress.country,
+        phone: orderData.shippingAddress.phone
       });
+      console.log('🔍 Payment Method:', orderData.paymentMethod);
+      console.log('🔍 Notes:', orderData.notes);
+      console.log('🔍 ==========================================');
 
       // Validation côté client
       if (!orderData.items || orderData.items.length === 0) {
@@ -229,28 +239,45 @@ const CheckoutPage = () => {
       navigate(`/payment/${createdOrder.id}?amount=${total}&method=${paymentMethod}`);
 
     } catch (error: any) {
-      console.error('Erreur lors de la création de la commande:', error);
+      console.error('❌ ===== ERREUR LORS DE LA CRÉATION DE LA COMMANDE =====');
+      console.error('❌ Error object:', error);
+      console.error('❌ Error response:', error.response);
+      console.error('❌ Error data:', error.response?.data);
+      console.error('❌ ====================================================');
       
-      // Log des détails de l'erreur
-      if (error.response?.data) {
-        console.error('Détails de l\'erreur serveur:', error.response.data);
-      }
-      
-      // Gestion spécifique des erreurs réseau
+      // Gestion spécifique des erreurs de validation (400)
       let errorMessage = "Impossible de créer la commande. Veuillez réessayer.";
-      if (error instanceof Error) {
+      let errorDetails = "";
+      
+      if (error.response?.status === 400) {
+        // Erreur de validation
+        const responseData = error.response.data;
+        
+        if (responseData?.data && typeof responseData.data === 'object') {
+          // Afficher les erreurs de validation champ par champ
+          const validationErrors = Object.entries(responseData.data)
+            .map(([field, message]) => `${field}: ${message}`)
+            .join('\n');
+          errorDetails = validationErrors;
+          errorMessage = "Erreur de validation des données";
+        } else if (responseData?.message) {
+          errorMessage = responseData.message;
+        }
+      } else if (error instanceof Error) {
         if (error.message.includes('Failed to fetch') || 
             error.message.includes('ERR_HTTP2_PING_FAILED') ||
             error.message.includes('ERR_NETWORK')) {
           errorMessage = "Serveur temporairement indisponible. Veuillez réessayer dans quelques minutes.";
         } else if (error.message.includes('timeout')) {
           errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+        } else {
+          errorMessage = error.message;
         }
       }
       
       toast({
         title: "Erreur de commande",
-        description: errorMessage,
+        description: errorDetails || errorMessage,
         variant: "destructive"
       });
     } finally {
