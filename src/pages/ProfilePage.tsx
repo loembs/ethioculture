@@ -26,19 +26,29 @@ import {
   Truck,
   Edit,
   Save,
-  X
+  X,
+  CreditCard
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
-import { orderService, OrderStatus } from "@/services/orderService";
+import { orderService, OrderStatus, Order } from "@/services/orderService";
 import { useQuery } from "@tanstack/react-query";
 import { formatPrice } from "@/utils/currency";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 const ProfilePage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("orders");
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({
     firstName: '',
     lastName: '',
@@ -322,13 +332,16 @@ const ProfilePage = () => {
                               </div>
                               
                               <div className="mt-3 flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => console.log('Order details:', order)}>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => {
+                                    setSelectedOrder(order);
+                                    setIsOrderDetailsOpen(true);
+                                  }}
+                                >
                                   <Eye className="h-4 w-4 mr-2" />
                                   Voir les détails
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => console.log('🔍 Full order data:', order)}>
-                                  <Package className="h-4 w-4 mr-2" />
-                                  Debug
                                 </Button>
                                 {order.status === OrderStatus.DELIVERED && (
                                   <Button variant="outline" size="sm">
@@ -578,6 +591,186 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de détails de commande */}
+      <Dialog open={isOrderDetailsOpen} onOpenChange={setIsOrderDetailsOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Détails de la commande
+            </DialogTitle>
+            <DialogDescription>
+              Commande N° {selectedOrder?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-6 mt-4">
+              {/* Statut et Informations générales */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Statut</span>
+                        <Badge variant={
+                          selectedOrder.status === OrderStatus.DELIVERED ? 'default' :
+                          selectedOrder.status === OrderStatus.CANCELLED ? 'destructive' :
+                          'secondary'
+                        }>
+                          {orderService.getOrderStatusLabel(selectedOrder.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Date</span>
+                        <span className="text-sm font-medium">
+                          {new Date(selectedOrder.createdAt).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Total</span>
+                        <span className="text-lg font-bold">{formatPrice(selectedOrder.totalAmount)}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">Paiement</span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{orderService.getPaymentMethodLabel(selectedOrder.paymentMethod)}</p>
+                        <Badge variant={
+                          selectedOrder.paymentStatus === 'PAID' ? 'default' : 'secondary'
+                        } className="mt-1">
+                          {selectedOrder.paymentStatus === 'PAID' ? 'Payé' :
+                           selectedOrder.paymentStatus === 'PENDING' ? 'En attente' :
+                           selectedOrder.paymentStatus === 'FAILED' ? 'Échoué' : 'Remboursé'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Adresse de livraison */}
+              {selectedOrder.shippingAddress && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Truck className="h-4 w-4" />
+                      Adresse de livraison
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      <p className="font-medium">
+                        {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}
+                      </p>
+                      <p className="text-muted-foreground">{selectedOrder.shippingAddress.street}</p>
+                      <p className="text-muted-foreground">
+                        {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}
+                      </p>
+                      <p className="text-muted-foreground">{selectedOrder.shippingAddress.country}</p>
+                      {selectedOrder.shippingAddress.phone && (
+                        <p className="text-muted-foreground">Tél: {selectedOrder.shippingAddress.phone}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Articles commandés */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ShoppingBag className="h-4 w-4" />
+                    Articles commandés ({selectedOrder.items?.length || 0})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                      selectedOrder.items.map((item) => (
+                        <div key={item.id} className="flex items-start gap-4 p-3 border rounded-lg">
+                          {item.product?.image && (
+                            <img
+                              src={item.product.image}
+                              alt={item.product.name}
+                              className="w-20 h-20 object-cover rounded-md"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm mb-1">
+                              {item.product?.name || `Produit #${item.productId}`}
+                            </h4>
+                            {item.product?.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                                {item.product.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-sm">
+                              <span className="text-muted-foreground">
+                                Quantité: <span className="font-medium text-foreground">{item.quantity}</span>
+                              </span>
+                              <span className="text-muted-foreground">
+                                Prix unitaire: <span className="font-medium text-foreground">{formatPrice(item.price)}</span>
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold">{formatPrice(item.price * item.quantity)}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-center text-muted-foreground py-8">
+                        Aucun article trouvé
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Récapitulatif du total */}
+                  <Separator className="my-4" />
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Sous-total</span>
+                      <span>{formatPrice(selectedOrder.totalAmount)}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total</span>
+                      <span>{formatPrice(selectedOrder.totalAmount)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notes */}
+              {selectedOrder.notes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{selectedOrder.notes}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -8,6 +8,8 @@ import { Footer } from "@/components/Footer";
 import HomePage from "@/pages/HomePage";
 import CuisinePage from "@/pages/CuisinePageNew";
 import ArtPage from "@/pages/ArtPage";
+import ArtGalleryPage from "@/pages/ArtGalleryPage";
+import ArtistProfilePage from "@/pages/ArtistProfilePage";
 import CartPage from "@/pages/CartPage";
 import CheckoutPage from "@/pages/CheckoutPage";
 import PaymentPage from "@/pages/PaymentPage";
@@ -56,6 +58,8 @@ const AppContent = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/cuisine" element={<CuisinePage />} />
               <Route path="/art" element={<ArtPage />} />
+              <Route path="/artists" element={<ArtGalleryPage />} />
+              <Route path="/artists/:id" element={<ArtistProfilePage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/payment/:orderId" element={<PaymentPage />} />

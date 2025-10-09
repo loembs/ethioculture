@@ -11,11 +11,14 @@ export interface Product {
   totalSales:number;
   category: 'food' | 'art';
   subcategory?: string;
+  artistId?: number;
+  artistName?: string;
   image: string;
   images?: string[];
   stock: number;
   available: boolean;
   rating?: number;
+  reviewCount?: number;
   reviews?: Review[];
   createdAt: string;
   updatedAt: string;
@@ -33,6 +36,7 @@ export interface Review {
 export interface ProductFilters {
   category?: 'food' | 'art';
   subcategory?: string;
+  artistId?: number;
   minPrice?: number;
   maxPrice?: number;
   available?: boolean;

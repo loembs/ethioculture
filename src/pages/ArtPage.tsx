@@ -24,20 +24,18 @@ const ArtPage = () => {
   };
   const { data: productsData, isLoading, error } = useProducts(artFilters);
 
-  // Sous-catégories disponibles
+  // Sous-catégories disponibles (seulement pour les œuvres d'art)
   const subcategories = [
-    { id: 4, name: 'Oeuvres', label: 'Toutes les Œuvres' },
     { id: 5, name: 'Tableaux', label: 'Tableaux' },
     { id: 6, name: 'Sculptures', label: 'Sculptures' },
-    { id: 7, name: 'Accessoires décoratifs', label: 'Accessoires' },
-    { id: 8, name: 'Evenements', label: 'Événements' }
+    { id: 7, name: 'Accessoires décoratifs', label: 'Accessoires' }
   ];
 
   const handleSubcategoryFilter = (subcategoryId: string | null) => {
     setSelectedSubcategory(subcategoryId);
   };
 
-  // Filtrer les événements (sous-catégorie "Evenements")
+  // Filtrer les événements (sous-catégorie "Evenements") pour l'onglet Événements
   const eventFilters = { 
     category: 'art' as const,
     subcategory: 'Evenements'
@@ -45,8 +43,8 @@ const ArtPage = () => {
   const { data: eventsData, isLoading: eventsLoading, error: eventsError } = useProducts(eventFilters);
   const events = eventsData?.content || [];
   
-  // Si "Evenements" est sélectionné, utiliser les événements, sinon les produits normaux
-  const products = selectedSubcategory === 'Evenements' ? events : (productsData?.content || []);
+  // Produits pour l'onglet Œuvres d'Art
+  const products = productsData?.content || [];
 
 
   return (
@@ -141,7 +139,6 @@ const ArtPage = () => {
                     : 'border-ethiopian-blue text-ethiopian-blue hover:bg-ethiopian-blue hover:text-white'
                 }`}
               >
-                <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Toutes les Œuvres</span>
                 <span className="sm:hidden">Toutes</span>
               </Button>
@@ -162,19 +159,15 @@ const ArtPage = () => {
             </div>
 
             {/* Affichage des produits */}
-            {(selectedSubcategory === 'Evenements' ? eventsLoading : isLoading) ? (
+            {isLoading ? (
               <ProductGrid products={[]} isLoading={true} skeletonCount={8} />
-            ) : (selectedSubcategory === 'Evenements' ? eventsError : error) ? (
+            ) : error ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  {selectedSubcategory === 'Evenements' ? 'Erreur de chargement des événements' : 'Erreur de chargement des œuvres'}
-                </p>
+                <p className="text-muted-foreground">Erreur de chargement des œuvres</p>
               </div>
             ) : products.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">
-                  {selectedSubcategory === 'Evenements' ? 'Aucun événement trouvé' : 'Aucune œuvre trouvée'}
-                </p>
+                <p className="text-muted-foreground">Aucune œuvre trouvée</p>
               </div>
             ) : (
               <ProductGrid products={products} />
