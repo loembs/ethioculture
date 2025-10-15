@@ -1,7 +1,7 @@
 // Configuration de l'API
 export const API_CONFIG = {
   // URL de base de l'API
-  BASE_URL: import.meta.env.VITE_API_URL || 'https://geezabackone.onrender.com/api',
+  BASE_URL: import.meta.env.VITE_API_URL ,
   
   // Timeouts
   TIMEOUT: 15000, // 15 secondes
@@ -23,6 +23,7 @@ export const API_CONFIG = {
     ORDERS: '/orders',
     AUTH: '/auth',
     ADMIN: '/admin',
+    PAYMENTS: '/payments',
   }
 };
 

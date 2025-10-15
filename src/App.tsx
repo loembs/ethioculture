@@ -63,6 +63,7 @@ const AppContent = () => {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/payment/:orderId" element={<PaymentPage />} />
+              <Route path="/payment/callback" element={<PaymentPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/user-profile" element={<UserProfile />} />
               <Route path="*" element={<NotFound />} />

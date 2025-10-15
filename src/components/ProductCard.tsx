@@ -14,6 +14,7 @@ interface ProductCardProps {
   showAddToCart?: boolean;
   showWishlist?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const ProductCard = ({
@@ -21,7 +22,8 @@ export const ProductCard = ({
   onViewDetails,
   showAddToCart = true,
   showWishlist = true,
-  className = ''
+  className = '',
+  style
 }: ProductCardProps) => {
   const { toast } = useToast();
   const { addToCart } = useCartManager();
@@ -100,7 +102,7 @@ export const ProductCard = ({
   };
 
   return (
-    <Card className={`overflow-hidden border-0 shadow-cultural hover:shadow-warm transition-all duration-300 group ${className}`}>
+    <Card className={`overflow-hidden border-0 shadow-cultural hover:shadow-warm transition-all duration-300 group ${className}`} style={style}>
       <div className="relative h-64 overflow-hidden">
         <img
           src={product.image}
