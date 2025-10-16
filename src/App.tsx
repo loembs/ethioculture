@@ -23,6 +23,8 @@ import { usePreloadData } from "@/hooks/usePreloadData";
 import { useCartSync } from "@/hooks/useCartSync";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SupabaseDebug } from "@/components/SupabaseDebug";
+import { startSessionMonitoring } from "@/utils/sessionManager";
+import { useEffect } from "react";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +43,18 @@ const queryClient = new QueryClient({
 const AppContent = () => {
   usePreloadData();
   useCartSync();
+
+  // Démarrer la surveillance de session
+  useEffect(() => {
+    startSessionMonitoring();
+    
+    return () => {
+      // Nettoyer à la fermeture
+      import('@/utils/sessionManager').then(({ stopSessionMonitoring }) => {
+        stopSessionMonitoring();
+      });
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
