@@ -1,18 +1,43 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { productService, Product, ProductFilters } from '@/services/productService';
+import { productService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
+
+// Types (à garder localement pour compatibilité)
+export interface Product {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  isFeatured: boolean;
+  totalSales: number;
+  category: 'food' | 'art';
+  subcategory?: string;
+  image: string;
+  stock: number;
+  available: boolean;
+  rating?: number;
+  reviewCount?: number;
+}
+
+export interface ProductFilters {
+  category?: 'food' | 'art';
+  subcategory?: string;
+  search?: string;
+  page?: number;
+  size?: number;
+}
 
 export const useProducts = (filters?: ProductFilters) => {
   return useQuery({
     queryKey: ['products', filters],
     queryFn: () => productService.getAllProducts(filters),
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
-    retry: 1, // Une seule tentative de retry
-    retryDelay: 1000, // 1 seconde de délai
-    refetchOnWindowFocus: false, // Ne pas refetch automatiquement
-    refetchOnMount: false, // Ne pas refetch au montage si les données sont en cache
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 };
 
@@ -35,12 +60,12 @@ export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: ['products', 'featured'],
     queryFn: () => productService.getFeaturedProducts(),
-    staleTime: 15 * 60 * 1000, // 15 minutes
-    gcTime: 60 * 60 * 1000, // 1 heure
-    retry: 1,
+    staleTime: 15 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 2,
     retryDelay: 1000,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: false
   });
 };
 
@@ -57,7 +82,7 @@ export const useCreateProduct = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: productService.createProduct,
+    mutationFn: (product: any) => productService.createProduct(product),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
@@ -105,7 +130,7 @@ export const useDeleteProduct = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: productService.deleteProduct,
+    mutationFn: (id: number) => productService.deleteProduct(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
@@ -152,9 +177,7 @@ export const useAddReview = () => {
 export const useProductFilters = () => {
   const [filters, setFilters] = useState<ProductFilters>({
     page: 0,
-    size: 20,
-    sortBy: 'name',
-    sortOrder: 'asc',
+    size: 20
   });
 
   const updateFilters = (newFilters: Partial<ProductFilters>) => {
@@ -168,9 +191,7 @@ export const useProductFilters = () => {
   const resetFilters = () => {
     setFilters({
       page: 0,
-      size: 20,
-      sortBy: 'name',
-      sortOrder: 'asc',
+      size: 20
     });
   };
 

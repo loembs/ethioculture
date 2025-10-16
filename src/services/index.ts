@@ -1,15 +1,27 @@
-// Export de tous les services
-export { apiService } from './api';
-export { productService } from './productService';
-export { cartService } from './cartService';
-export { authService } from './authService';
-export { orderService } from './orderService';
-export { paymentService } from './paymentService';
+// =============================================
+// SERVICES SUPABASE (ACTIFS)
+// =============================================
+export { authService } from './auth.service';
+export { productsService as productService } from './products.service';
+export { cartService } from './cart.service';
+export { ordersService as orderService } from './orders.service';
+export { paymentService } from './payment.service';
+export { wishlistService } from './wishlist.service';
+export { notificationsService } from './notifications.service';
+export { trackingService } from './tracking.service';
+export { artistsService } from './artists.service';
 
-// Export des types
-export type { Product, Review, ProductFilters } from './productService';
-export type { CartItem, Cart, AddToCartRequest } from './cartService';
-export type { User, LoginRequest, RegisterRequest, AuthResponse } from './authService';
-export type { Order, OrderItem, ShippingAddress, CreateOrderRequest, OrderFilters } from './orderService';
-export type { PaymentRequest, FlutterwaveResponse, PaymentVerificationResponse } from './paymentService';
-export { OrderStatus, PaymentMethod, PaymentStatus } from './orderService';
+// =============================================
+// ANCIENS SERVICES (GEEZABACK) - CONSERVÉS MAIS NON UTILISÉS
+// =============================================
+// Décommenter pour revenir au backend Java
+// export { authService } from './authService';
+// export { productService } from './productService';
+// export { cartService } from './cartService';
+// export { orderService } from './orderService';
+// export { paymentService } from './paymentService';
+
+// =============================================
+// AUTRES SERVICES
+// =============================================
+export { apiService } from './api';

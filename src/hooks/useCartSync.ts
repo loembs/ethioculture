@@ -1,8 +1,7 @@
 // Hook pour synchroniser le panier local avec l'API lors de la connexion
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { cartService } from '@/services/cartService';
-import { authService } from '@/services/authService';
+import { cartService, authService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
 
 export const useCartSync = () => {
@@ -25,10 +24,7 @@ export const useCartSync = () => {
         // Synchroniser chaque item du panier local vers l'API
         for (const item of localCartItems) {
           try {
-            await cartService.addToCart({
-              productId: item.productId,
-              quantity: item.quantity
-            });
+            await cartService.addToCart(item.productId, item.quantity);
           } catch (error) {
             console.warn(`Erreur lors de la synchronisation de l'item ${item.productId}:`, error);
           }

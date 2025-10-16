@@ -3,10 +3,22 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Heart, Eye, Star } from 'lucide-react';
-import { Product } from '@/services/productService';
 import { useToast } from '@/hooks/use-toast';
 import { useCartManager } from '@/hooks/useCart';
 import { formatPrice, getPreferredCurrency, Currency } from '@/utils/currency';
+import { useNavigate } from 'react-router-dom';
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+  description?: string;
+  stock?: number;
+  available?: boolean;
+  category?: string;
+  rating?: number;
+}
 
 interface ProductCardProps {
   product: Product;
@@ -74,9 +86,14 @@ export const ProductCard = ({
     });
   };
 
+  const navigate = useNavigate();
+
   const handleViewDetails = () => {
     if (onViewDetails) {
       onViewDetails(product);
+    } else {
+      // Navigation automatique vers la page de détails
+      navigate(`/product/${product.id}`);
     }
   };
 
@@ -181,12 +198,6 @@ export const ProductCard = ({
         <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
           {product.description}
         </p>
-        
-        {product.subcategory && (
-          <p className="text-xs text-ethiopian-silver mb-2">
-            {product.subcategory}
-          </p>
-        )}
 
         {renderRating(product.rating)}
       </CardContent>

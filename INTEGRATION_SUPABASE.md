@@ -350,3 +350,7 @@ Ces clés sont **automatiquement protégées** par Row Level Security (RLS). Un 
 
 **Résumé:** Copier `.env.local.example` → `.env.local`, remplir les clés, importer les services, c'est tout ! ✅
 
+
+
+
+

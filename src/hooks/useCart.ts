@@ -1,51 +1,62 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { cartService, Cart, CartItem, AddToCartRequest } from '@/services/cartService';
+import { cartService, authService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/contexts/AuthContext';
+
+// Types (à garder localement pour compatibilité)
+export interface CartItem {
+  id: number;
+  productId: number;
+  product: any;
+  quantity: number;
+  price: number;
+  addedAt: string;
+}
+
+export interface Cart {
+  id: number;
+  userId: number;
+  items: CartItem[];
+  totalItems: number;
+  totalPrice: number;
+}
+
+export interface AddToCartRequest {
+  productId: number;
+  quantity: number;
+}
 
 export const useCart = () => {
-  const isAuthenticated = authService.isAuthenticated();
+  const { isAuthenticated } = useAuth();
   
   return useQuery({
     queryKey: ['cart'],
-    queryFn: async () => {
-      try {
-        const result = await cartService.getCart();
-        return result || { id: 0, userId: 0, items: [], totalItems: 0, totalPrice: 0, createdAt: '', updatedAt: '' };
-      } catch (error) {
-        console.error('Error fetching cart:', error);
-        return { id: 0, userId: 0, items: [], totalItems: 0, totalPrice: 0, createdAt: '', updatedAt: '' };
-      }
-    },
+    queryFn: () => cartService.getCart(),
     enabled: isAuthenticated,
-    staleTime: 1 * 60 * 1000, // 1 minute
+    staleTime: 1 * 60 * 1000,
+    retry: 2
   });
 };
 
 export const useCartItemCount = () => {
-  const isAuthenticated = authService.isAuthenticated();
+  const { isAuthenticated } = useAuth();
   
   return useQuery({
     queryKey: ['cart', 'count'],
     queryFn: async () => {
-      try {
-        const result = await cartService.getCartItemCount();
-        return result || 0;
-      } catch (error) {
-        console.error('Error fetching cart count:', error);
-        return 0;
-      }
+      const cart = await cartService.getCart()
+      return cart?.reduce((count: number, item: any) => count + item.quantity, 0) || 0
     },
     enabled: isAuthenticated,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
+    retry: 2
   });
 };
 
 export const useAddToCart = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const isAuthenticated = authService.isAuthenticated();
 
   return useMutation({
     mutationFn: (item: AddToCartRequest) => cartService.addToCart(item),
@@ -217,7 +228,7 @@ export const useLocalCart = () => {
 // Hook principal pour gérer le panier (authentifié ou local)
 export const useCartManager = () => {
   const queryClient = useQueryClient();
-  const isAuthenticated = authService.isAuthenticated();
+  const { isAuthenticated } = useAuth();
   const { data: cart, isLoading: cartLoading } = useCart();
   const { data: cartItemCount, isLoading: countLoading } = useCartItemCount();
   const localCart = useLocalCart();
@@ -284,7 +295,8 @@ export const useCartManager = () => {
     if (isAuthenticated) {
       try {
         // Trouver l'ID de l'item dans le panier
-        const cartItem = cart?.items?.find(item => item.productId === productId);
+        const cartArray = Array.isArray(cart) ? cart : []
+        const cartItem = cartArray.find((item: any) => item.productId === productId);
         if (cartItem) {
           await removeFromCartMutation.mutateAsync(cartItem.id);
           // Forcer la mise à jour immédiate
@@ -312,7 +324,8 @@ export const useCartManager = () => {
     if (isAuthenticated) {
       try {
         // Trouver l'ID de l'item dans le panier
-        const cartItem = cart?.items?.find(item => item.productId === productId);
+        const cartArray = Array.isArray(cart) ? cart : []
+        const cartItem = cartArray.find((item: any) => item.productId === productId);
         if (cartItem) {
           await updateCartItemMutation.mutateAsync({
             itemId: cartItem.id,
@@ -374,41 +387,36 @@ export const useCartManager = () => {
 
   // Calculer le total côté frontend pour plus de fiabilité
   const calculateCartTotal = () => {
-    // Toujours utiliser le panier local si disponible, sinon le panier serveur
-    const items = localCart.localCartItems.length > 0 ? localCart.localCartItems : (cart?.items || []);
+    const items = localCart.localCartItems.length > 0 ? localCart.localCartItems : (cart || []);
     if (!items || items.length === 0) return 0;
     
-    return items.reduce((total, item) => {
+    return items.reduce((total: number, item: any) => {
       const itemTotal = (item.price || 0) * (item.quantity || 0);
       return total + itemTotal;
     }, 0);
   };
 
   const calculateCartItemCount = () => {
-    // Toujours utiliser le panier local si disponible, sinon le panier serveur
-    const items = localCart.localCartItems.length > 0 ? localCart.localCartItems : (cart?.items || []);
+    const items = localCart.localCartItems.length > 0 ? localCart.localCartItems : (cart || []);
     if (!items || items.length === 0) return 0;
     
-    return items.reduce((count, item) => count + (item.quantity || 0), 0);
+    return items.reduce((count: number, item: any) => count + (item.quantity || 0), 0);
   };
 
+  const finalCartItems = localCart.localCartItems.length > 0 
+    ? localCart.localCartItems 
+    : (Array.isArray(cart) ? cart : []);
+
   return {
-    // Données du panier - priorité au panier local si disponible
     cart: isAuthenticated ? cart : null,
-    cartItems: localCart.localCartItems.length > 0 ? localCart.localCartItems : (isAuthenticated ? cart?.items : localCart.localCartItems),
-    cartTotal: calculateCartTotal(), // Calcul côté frontend
-    cartItemCount: calculateCartItemCount(), // Calcul côté frontend
-    
-    // États de chargement
+    cartItems: finalCartItems,
+    cartTotal: calculateCartTotal(),
+    cartItemCount: calculateCartItemCount(),
     isLoading: isAuthenticated ? (cartLoading || countLoading) : false,
-    
-    // Actions
     addToCart,
     removeFromCart,
     updateCartItem,
     clearCart,
-    
-    // État d'authentification
-    isAuthenticated,
+    isAuthenticated
   };
 };

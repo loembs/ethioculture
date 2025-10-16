@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Heart, Eye, Star, Sparkles, Crown } from 'lucide-react';
-import { Product } from '@/services/productService';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useCartManager } from '@/hooks/useCart';
 import { formatPrice } from '@/utils/currency';

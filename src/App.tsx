@@ -10,6 +10,7 @@ import CuisinePage from "@/pages/CuisinePageNew";
 import ArtPage from "@/pages/ArtPage";
 import ArtGalleryPage from "@/pages/ArtGalleryPage";
 import ArtistProfilePage from "@/pages/ArtistProfilePage";
+import ProductDetailPage from "@/pages/ProductDetailPage";
 import CartPage from "@/pages/CartPage";
 import CheckoutPage from "@/pages/CheckoutPage";
 import PaymentPage from "@/pages/PaymentPage";
@@ -18,32 +19,26 @@ import UserProfile from "@/pages/UserProfile";
 import LoginPage from "@/pages/LoginPage";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
-import { usePreloadData, useBackgroundPreload, useUserDataPreload } from "@/hooks/usePreloadData";
-import { useCartSync, useCartPersistence } from "@/hooks/useCartSync";
+import { usePreloadData } from "@/hooks/usePreloadData";
+import { useCartSync } from "@/hooks/useCartSync";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { SupabaseDebug } from "@/components/SupabaseDebug";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes par défaut
-      gcTime: 30 * 60 * 1000, // 30 minutes
-      retry: 1,
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      retry: 2,
       retryDelay: 1000,
-      refetchOnWindowFocus: false,
-    },
-  },
+      refetchOnWindowFocus: false
+    }
+  }
 });
 
 const AppContent = () => {
-  // Précharger les données essentielles
   usePreloadData();
-  // Précharger les données en arrière-plan
-  useBackgroundPreload();
-  // Précharger les données utilisateur après connexion
-  useUserDataPreload();
-  // Synchroniser le panier local avec l'API
   useCartSync();
-  // Gérer la persistance du panier local
-  useCartPersistence();
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,6 +47,7 @@ const AppContent = () => {
         <Route path="/admin/*" element={<AdminDashboard />} />
         <Route path="/*" element={
           <div className="min-h-screen flex flex-col">
+            <SupabaseDebug />
             <Header />
             <main className="flex-1">
               <Routes>
@@ -60,6 +56,7 @@ const AppContent = () => {
               <Route path="/art" element={<ArtPage />} />
               <Route path="/artists" element={<ArtGalleryPage />} />
               <Route path="/artists/:id" element={<ArtistProfilePage />} />
+              <Route path="/product/:id" element={<ProductDetailPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<CheckoutPage />} />
               <Route path="/payment/:orderId" element={<PaymentPage />} />
@@ -79,13 +76,15 @@ const AppContent = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

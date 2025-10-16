@@ -25,6 +25,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
+// Exporter l'URL et la clé pour les Edge Functions
+export { supabaseUrl, supabaseAnonKey }
+
 // Types pour TypeScript
 export type Database = {
   public: {

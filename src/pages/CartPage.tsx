@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useCartManager } from "@/hooks/useCart";
 import { formatPrice, getPreferredCurrency, Currency } from "@/utils/currency";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const CartPage = () => {
   const { toast } = useToast();
@@ -17,30 +17,22 @@ const CartPage = () => {
   const [localQuantities, setLocalQuantities] = useState<Record<number, number>>({});
   const [currentCurrency, setCurrentCurrency] = useState<Currency>(getPreferredCurrency());
   
-  // Synchroniser les quantités locales avec les données du panier
+  // Mémoriser les IDs des items pour détecter les vrais changements
+  const cartItemIds = useMemo(() => 
+    cartItems?.map(item => `${item.productId}-${item.quantity}`).join(',') || '',
+    [cartItems]
+  );
+  
+  // Synchroniser les quantités locales UNIQUEMENT quand les items changent réellement
   useEffect(() => {
-    if (cartItems) {
+    if (cartItems && cartItems.length > 0) {
       const quantities: Record<number, number> = {};
       cartItems.forEach(item => {
         quantities[item.productId] = item.quantity;
       });
       setLocalQuantities(quantities);
     }
-  }, [cartItems]);
-
-  // Forcer la mise à jour du composant lors des changements du panier local
-  useEffect(() => {
-    const handleCartChange = () => {
-      // Forcer un re-render pour mettre à jour les totaux
-      setLocalQuantities(prev => ({ ...prev }));
-    };
-    
-    window.addEventListener('localCartChanged', handleCartChange);
-    
-    return () => {
-      window.removeEventListener('localCartChanged', handleCartChange);
-    };
-  }, []);
+  }, [cartItemIds]); // Utiliser cartItemIds au lieu de cartItems
 
   // Écouter les changements de devise
   useEffect(() => {

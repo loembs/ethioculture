@@ -2,18 +2,32 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ShoppingCart, Calendar, MapPin, Users, Eye, Filter, Search, Palette, Sparkles, Crown, ArrowRight } from "lucide-react";
+import { Calendar, Users, Eye, Palette, Sparkles, ArrowRight, Search, SlidersHorizontal } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts, useProductFilters } from "@/hooks/useProducts";
 import { ProductGrid } from "@/components/ProductGrid";
-import { useCartManager } from "@/hooks/useCart";
-import { artistService, Artist } from "@/services/artistService";
-import { formatPrice } from "@/utils/currency";
-import artHero from "@/assets/ethiopian-art-hero.jpg"
+import { artistsService } from "@/services";
+import { ProductFiltersAdvanced } from "@/components/ProductFiltersAdvanced";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+interface Artist {
+  id: number;
+  fullName: string;
+  firstName: string;
+  lastName: string;
+  biography?: string;
+  profileImage?: string;
+  coverImage?: string;
+  specialty?: string;
+  yearsOfExperience?: number;
+  isFeatured?: boolean;
+  artworkCount?: number;
+}
 
 // Composant pour les cartes d'artistes en vedette
 const FeaturedArtistCard = ({ artist, onClick }: { artist: Artist; onClick: () => void }) => (
@@ -118,42 +132,34 @@ const ArtPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("oeuvres");
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'products' | 'artists'>('products');
-  const { addToCart: addToCartHook } = useCartManager();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('name');
+  const [priceFilters, setPriceFilters] = useState<any>({});
+  const { filters, updateFilters } = useProductFilters();
   
-  
-  // Filtrer pour la catégorie art
+  // Filtrer pour la catégorie art avec filtres e-commerce
   const artFilters = { 
     category: 'art' as const,
-    subcategory: selectedSubcategory || undefined
+    search: searchQuery || filters.search
   };
   const { data: productsData, isLoading, error } = useProducts(artFilters);
 
-  // Récupérer les artistes
-  const { data: artistsData, isLoading: artistsLoading } = useQuery({
-    queryKey: ['artists-preview'],
-    queryFn: () => artistService.getAllArtists({ size: 12, sortBy: 'artworkCount', sortOrder: 'desc' }),
+  // Récupérer les artistes depuis Supabase
+  const { data: artists, isLoading: artistsLoading } = useQuery({
+    queryKey: ['artists'],
+    queryFn: () => artistsService.getAllArtists(),
+    staleTime: 10 * 60 * 1000
   });
 
   // Récupérer les artistes en vedette
   const { data: featuredArtists } = useQuery({
     queryKey: ['featured-artists'],
-    queryFn: () => artistService.getFeaturedArtists(),
+    queryFn: () => artistsService.getFeaturedArtists(),
+    staleTime: 15 * 60 * 1000
   });
 
-  // Sous-catégories disponibles (seulement pour les œuvres d'art)
-  const subcategories = [
-    { id: 5, name: 'Tableaux', label: 'Tableaux' },
-    { id: 6, name: 'Sculptures', label: 'Sculptures' },
-    { id: 7, name: 'Accessoires décoratifs', label: 'Accessoires' }
-  ];
-
-  const handleSubcategoryFilter = (subcategoryId: string | null) => {
-    setSelectedSubcategory(subcategoryId);
-  };
-
-  // Filtrer les événements (sous-catégorie "Evenements") pour l'onglet Événements
+  // Filtrer les événements
   const eventFilters = { 
     category: 'art' as const,
     subcategory: 'Evenements'
@@ -162,8 +168,25 @@ const ArtPage = () => {
   const events = eventsData?.content || [];
   
   // Produits pour l'onglet Œuvres d'Art
-  const products = productsData?.content || [];
-  const artists = artistsData?.content || [];
+  let products = productsData?.content || [];
+  
+  // Appliquer les filtres de prix
+  if (priceFilters.minPrice || priceFilters.maxPrice) {
+    products = products.filter(p => {
+      if (priceFilters.minPrice && p.price < priceFilters.minPrice) return false;
+      if (priceFilters.maxPrice && p.price > priceFilters.maxPrice) return false;
+      return true;
+    });
+  }
+
+  // Appliquer le tri
+  if (sortBy === 'price-asc') {
+    products = [...products].sort((a, b) => a.price - b.price);
+  } else if (sortBy === 'price-desc') {
+    products = [...products].sort((a, b) => b.price - a.price);
+  } else if (sortBy === 'popular') {
+    products = [...products].sort((a, b) => (b.totalSales || 0) - (a.totalSales || 0));
+  }
 
 
   return (
@@ -278,34 +301,43 @@ const ArtPage = () => {
             {/* Vue Produits */}
             {viewMode === 'products' && (
               <>
-                {/* Filtres par sous-catégorie - Responsive */}
-                <div className="flex flex-wrap gap-2 sm:gap-4 justify-center mb-6 sm:mb-8 animate-cultural-slide-up">
-                  <Button
-                    variant={selectedSubcategory === null ? "default" : "outline"}
-                    onClick={() => handleSubcategoryFilter(null)}
-                    className={`transition-all duration-300 text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-3 ${
-                      selectedSubcategory === null 
-                        ? 'ethiopian-button' 
-                        : 'border-ethiopian-blue text-ethiopian-blue hover:bg-ethiopian-blue hover:text-white'
-                    }`}
-                  >
-                    <span className="hidden sm:inline">Toutes les Œuvres</span>
-                    <span className="sm:hidden">Toutes</span>
-                  </Button>
-                  {subcategories.map((sub, index) => (
-                    <Button
-                      key={sub.id}
-                      variant={selectedSubcategory === sub.name ? "default" : "outline"}
-                      onClick={() => handleSubcategoryFilter(sub.name)}
-                      className={`transition-all duration-300 animate-delay-${(index + 1) * 100} text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-3 ${
-                        selectedSubcategory === sub.name 
-                          ? 'ethiopian-button' 
-                          : 'border-ethiopian-blue text-ethiopian-blue hover:bg-ethiopian-blue hover:text-white'
-                      }`}
-                    >
-                      {sub.label}
-                    </Button>
-                  ))}
+                {/* Barre de recherche et filtres e-commerce */}
+                <div className="flex flex-col lg:flex-row gap-4 mb-6">
+                  {/* Recherche */}
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Rechercher une œuvre d'art..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+
+                  {/* Tri */}
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-full lg:w-[200px]">
+                      <SelectValue placeholder="Trier par" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="name">Nom</SelectItem>
+                      <SelectItem value="price-asc">Prix croissant</SelectItem>
+                      <SelectItem value="price-desc">Prix décroissant</SelectItem>
+                      <SelectItem value="popular">Plus populaire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Filtres avancés */}
+                <ProductFiltersAdvanced 
+                  onFilterChange={setPriceFilters}
+                  maxPrice={50000}
+                />
+
+                {/* Résultats */}
+                <div className="mb-4 text-sm text-muted-foreground">
+                  {products.length} œuvre{products.length > 1 ? 's' : ''} trouvée{products.length > 1 ? 's' : ''}
                 </div>
 
                 {/* Affichage des produits */}
@@ -317,7 +349,9 @@ const ArtPage = () => {
                   </div>
                 ) : products.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-muted-foreground">Aucune œuvre trouvée</p>
+                    <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-semibold mb-2">Aucune œuvre trouvée</p>
+                    <p className="text-sm text-muted-foreground">Essayez de modifier vos critères de recherche</p>
                   </div>
                 ) : (
                   <ProductGrid products={products} />
@@ -331,14 +365,12 @@ const ArtPage = () => {
                 {/* Artistes en Vedette */}
                 {featuredArtists && featuredArtists.length > 0 && (
                   <div className="mb-12">
-                    <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-ethiopian-gold" />
-                        Artistes en Vedette
-                      </h3>
+                    <div className="flex items-center gap-2 mb-6">
+                      <Sparkles className="h-6 w-6 text-ethiopian-gold" />
+                      <h3 className="text-2xl font-bold">Artistes en Vedette</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {featuredArtists.slice(0, 3).map((artist) => (
+                      {featuredArtists.map((artist) => (
                         <FeaturedArtistCard 
                           key={artist.id} 
                           artist={artist} 
@@ -349,20 +381,15 @@ const ArtPage = () => {
                   </div>
                 )}
 
-                <Separator className="my-8" />
+                {featuredArtists && featuredArtists.length > 0 && (
+                  <Separator className="my-8" />
+                )}
 
                 {/* Tous les Artistes */}
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl sm:text-2xl font-bold">Tous les Artistes</h3>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => navigate('/artists')}
-                      className="text-ethiopian-blue border-ethiopian-blue hover:bg-ethiopian-blue hover:text-white"
-                    >
-                      Voir tous
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
+                    <h3 className="text-2xl font-bold">Tous les Artistes</h3>
+                    <Badge variant="secondary">{artists?.length || 0} artiste{(artists?.length || 0) > 1 ? 's' : ''}</Badge>
                   </div>
 
                   {artistsLoading ? (
@@ -370,14 +397,14 @@ const ArtPage = () => {
                       {[1, 2, 3, 4, 5, 6].map((i) => (
                         <Card key={i} className="animate-pulse">
                           <CardHeader>
-                            <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
+                            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
                             <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
                             <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                           </CardHeader>
                         </Card>
                       ))}
                     </div>
-                  ) : artists.length > 0 ? (
+                  ) : artists && artists.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {artists.map((artist) => (
                         <ArtistCard 
@@ -391,7 +418,14 @@ const ArtPage = () => {
                     <div className="text-center py-12">
                       <Palette className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                       <h3 className="text-xl font-semibold mb-2">Aucun artiste trouvé</h3>
-                      <p className="text-muted-foreground">Aucun artiste disponible pour le moment</p>
+                      <p className="text-muted-foreground">Les artistes seront ajoutés bientôt</p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={() => setViewMode('products')}
+                      >
+                        Voir les produits
+                      </Button>
                     </div>
                   )}
                 </div>

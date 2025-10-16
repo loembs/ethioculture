@@ -3,15 +3,15 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, LogIn, LogOut } from 'lucide-react';
-import { authService } from '@/services/authService';
+import { User, LogIn, LogOut, Loader2 } from 'lucide-react';
+import { authService } from '@/services';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const AuthStatus = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const isAuthenticated = authService.isAuthenticated();
-  const user = authService.getUser();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
 
   const handleLogout = async () => {
     setIsLoading(true);
@@ -47,7 +47,12 @@ export const AuthStatus = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isAuthenticated ? (
+        {authLoading ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-ethiopian-gold" />
+            <span className="ml-2 text-sm text-muted-foreground">Chargement...</span>
+          </div>
+        ) : isAuthenticated ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Badge className="bg-green-500 text-white">

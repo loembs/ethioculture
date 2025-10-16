@@ -1,15 +1,11 @@
 // =============================================
-// SERVICE PRODUITS
+// SERVICE PRODUITS - SUPABASE
 // =============================================
 import { supabase } from '@/config/supabase'
 
 export const productsService = {
-  // Récupérer tous les produits
-  async getProducts(filters?: {
-    category_id?: number
-    available?: boolean
-    search?: string
-  }) {
+  // Récupérer tous les produits (format compatible avec l'ancien service)
+  async getAllProducts(filters?: any) {
     let query = supabase
       .from('ethio_products')
       .select(`
@@ -18,22 +14,54 @@ export const productsService = {
         subcategory:subcategories(id, name),
         artist:artists(id, first_name, last_name)
       `)
+      .eq('available', true)
 
-    if (filters?.category_id) {
-      query = query.eq('category_id', filters.category_id)
+    // Filtrer par catégorie si spécifié
+    if (filters?.category === 'food') {
+      query = query.eq('category_id', 1)
+    } else if (filters?.category === 'art') {
+      query = query.eq('category_id', 2)
     }
 
-    if (filters?.available !== undefined) {
-      query = query.eq('available', filters.available)
+    // Filtrer par sous-catégorie
+    if (filters?.subcategory) {
+      query = query.eq('subcategory.name', filters.subcategory)
     }
 
+    // Recherche
     if (filters?.search) {
       query = query.ilike('name', `%${filters.search}%`)
     }
 
     const { data, error } = await query
     if (error) throw error
-    return data
+
+    // Mapper au format attendu par le frontend
+    const mappedProducts = (data || []).map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: (item.category_id === 1 ? 'food' : 'art') as 'food' | 'art',
+      subcategory: item.subcategory?.name,
+      image: item.image_url,
+      stock: item.stock,
+      available: item.available,
+      isFeatured: item.is_featured,
+      totalSales: item.total_sales,
+      rating: item.rating,
+      reviewCount: item.review_count,
+      createdAt: item.created_at,
+      updatedAt: item.updated_at
+    }))
+
+    return {
+      content: mappedProducts,
+      totalElements: mappedProducts.length,
+      totalPages: 1,
+      currentPage: 0,
+      size: mappedProducts.length
+    }
   },
 
   // Récupérer un produit par ID
@@ -51,7 +79,52 @@ export const productsService = {
       .single()
 
     if (error) throw error
-    return data
+
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      category: (data.category_id === 1 ? 'food' : 'art') as 'food' | 'art',
+      image: data.image_url,
+      stock: data.stock,
+      available: data.available,
+      isFeatured: data.is_featured,
+      totalSales: data.total_sales,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at
+    }
+  },
+
+  // Récupérer les produits par catégorie
+  async getProductsByCategory(category: 'food' | 'art', subcategory?: string) {
+    const categoryId = category === 'food' ? 1 : 2
+    
+    let query = supabase
+      .from('ethio_products')
+      .select('*')
+      .eq('category_id', categoryId)
+      .eq('available', true)
+
+    if (subcategory) {
+      query = query.eq('subcategory.name', subcategory)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category,
+      image: item.image_url,
+      stock: item.stock,
+      available: item.available,
+      isFeatured: item.is_featured,
+      totalSales: item.total_sales
+    }))
   },
 
   // Récupérer les produits en vedette
@@ -64,7 +137,19 @@ export const productsService = {
       .limit(6)
 
     if (error) throw error
-    return data
+
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      category: (item.category_id === 1 ? 'food' : 'art') as 'food' | 'art',
+      image: item.image_url,
+      stock: item.stock,
+      available: item.available,
+      isFeatured: item.is_featured,
+      totalSales: item.total_sales
+    }))
   },
 
   // Récupérer les catégories
@@ -75,6 +160,39 @@ export const productsService = {
 
     if (error) throw error
     return data
+  },
+
+  // Recherche de produits
+  async searchProducts(query: string) {
+    const { data, error } = await supabase
+      .from('ethio_products')
+      .select('*')
+      .ilike('name', `%${query}%`)
+      .eq('available', true)
+
+    if (error) throw error
+    return data || []
+  },
+
+  // Méthodes admin (non implémentées - utiliser dashboard Supabase)
+  async createProduct(product: any) {
+    throw new Error('Non implémenté - Utiliser le dashboard Supabase')
+  },
+  
+  async updateProduct(id: number, product: any) {
+    throw new Error('Non implémenté - Utiliser le dashboard Supabase')
+  },
+  
+  async deleteProduct(id: number) {
+    throw new Error('Non implémenté - Utiliser le dashboard Supabase')
+  },
+
+  async addReview(productId: number, review: any) {
+    throw new Error('Non implémenté')
+  },
+
+  async getProductReviews(productId: number) {
+    throw new Error('Non implémenté')
   }
 }
 
