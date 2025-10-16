@@ -30,10 +30,30 @@ import {
   CreditCard
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { authService } from "@/services/authService";
-import { orderService, OrderStatus, Order } from "@/services/orderService";
+import { authService } from "@/services";
+import { orderService } from "@/services";
 import { useQuery } from "@tanstack/react-query";
 import { formatPrice } from "@/utils/currency";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Types
+export interface Order {
+  id: number;
+  orderDate: string;
+  totalAmount: number;
+  status: string;
+  items: any[];
+}
+
+export enum OrderStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  PROCESSING = 'PROCESSING',
+  SHIPPED = 'SHIPPED',
+  DELIVERED = 'DELIVERED',
+  CANCELLED = 'CANCELLED',
+  REFUNDED = 'REFUNDED'
+}
 import {
   Dialog,
   DialogContent,
@@ -62,25 +82,16 @@ const ProfilePage = () => {
     }
   });
 
-  // Récupérer les données de l'utilisateur connecté
-  const currentUser = authService.getUser();
-  const isAuthenticated = authService.isAuthenticated();
+  // Récupérer les données de l'utilisateur connecté depuis le contexte
+  const { user: currentUser, isAuthenticated, isLoading: authLoading } = useAuth();
 
   // Récupérer les commandes de l'utilisateur (avec cache optimisé)
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useQuery({
     queryKey: ['user-orders'],
-    queryFn: () => orderService.getOrderHistory(),
+    queryFn: () => orderService.getMyOrders(),
     enabled: isAuthenticated,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-  });
-
-  // Récupérer les statistiques des commandes
-  const { data: orderStats, isLoading: statsLoading } = useQuery({
-    queryKey: ['user-order-stats'],
-    queryFn: () => orderService.getOrderStatistics(),
-    enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Initialiser le formulaire avec les données utilisateur (une seule fois)
@@ -91,7 +102,7 @@ const ProfilePage = () => {
         lastName: currentUser.lastName || '',
         email: currentUser.email || '',
         phone: currentUser.phone || '',
-        address: currentUser.address || {
+        address: {
           street: '',
           city: '',
           postalCode: '',
@@ -103,43 +114,28 @@ const ProfilePage = () => {
 
   // Rediriger vers la connexion si non authentifié
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login?redirect=/profile', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Données calculées pour l'utilisateur
   const userStats = {
     name: currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : '',
     email: currentUser?.email || '',
     phone: currentUser?.phone || '',
-    address: currentUser?.address ? `${currentUser.address.street}, ${currentUser.address.city}` : '',
-    joinDate: currentUser?.createdAt ? new Date(currentUser.createdAt).toLocaleDateString('fr-FR', { 
-      month: 'long', 
-      year: 'numeric' 
-    }) : '',
-    totalOrders: orderStats?.totalOrders || orders?.length || 0,
-    totalRevenue: orderStats?.totalRevenue || 0,
+    joinDate: 'Nouveau membre',
+    totalOrders: orders?.length || 0,
     favoriteItems: 0 // TODO: Implémenter les favoris
   };
 
   // Fonction pour mettre à jour le profil
   const handleUpdateProfile = async () => {
-    try {
-      await authService.updateProfile(profileForm);
-      toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été sauvegardées avec succès",
-      });
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du profil:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le profil. Veuillez réessayer.",
-        variant: "destructive"
-      });
-    }
+    toast({
+      title: "Fonctionnalité à venir",
+      description: "La modification du profil sera bientôt disponible",
+    });
+    setIsEditing(false);
   };
 
   // Fonction pour annuler l'édition
@@ -150,7 +146,7 @@ const ProfilePage = () => {
         lastName: currentUser.lastName || '',
         email: currentUser.email || '',
         phone: currentUser.phone || '',
-        address: currentUser.address || {
+        address: (currentUser as any).address || {
           street: '',
           city: '',
           postalCode: '',
@@ -179,28 +175,29 @@ const ProfilePage = () => {
     return (
       <Badge className={`${config.color} flex items-center gap-1`}>
         <Icon className="h-3 w-3" />
-        {orderService.getOrderStatusLabel(status)}
+        {status}
       </Badge>
     );
   };
 
-  // Si non authentifié, ne rien afficher (redirection en cours)
-  if (!isAuthenticated) {
-    return null;
-  }
-
-  // Si l'utilisateur n'est pas encore chargé, afficher un loader
-  if (!currentUser) {
+  // Afficher un loader pendant le chargement de l'authentification
+  if (authLoading || !currentUser) {
     return (
       <div className="min-h-screen bg-background py-8">
         <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Chargement de votre profil...</p>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ethiopian-gold mx-auto mb-4"></div>
+            <p className="text-lg font-medium">Chargement de votre profil...</p>
+            <p className="text-sm text-muted-foreground mt-2">Veuillez patienter</p>
           </div>
         </div>
       </div>
     );
+  }
+
+  // Si non authentifié après chargement, ne rien afficher (redirection en cours)
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
@@ -307,27 +304,24 @@ const ProfilePage = () => {
                             <CardContent className="p-4">
                               <div className="flex justify-between items-start mb-3">
                                 <div>
-                                  <h3 className="font-semibold">Commande #{order.orderNumber}</h3>
+                                  <h3 className="font-semibold">Commande #{order.id}</h3>
                                   <p className="text-sm text-muted-foreground">
-                                    {new Date(order.createdAt).toLocaleDateString('fr-FR')}
+                                    {new Date(order.orderDate).toLocaleDateString('fr-FR')}
                                   </p>
                                 </div>
-                                {getStatusBadge(order.status)}
+                                {getStatusBadge(order.status as OrderStatus)}
                               </div>
                               
-                              <div className="grid md:grid-cols-3 gap-4 text-sm">
+                              <div className="grid md:grid-cols-2 gap-4 text-sm">
                                 <div>
                                   <span className="font-medium">Total:</span> {formatPrice(order.totalAmount)}
                                 </div>
                                 <div>
                                   <span className="font-medium">Articles:</span> {
                                     order.items && order.items.length > 0 
-                                      ? order.items.reduce((sum, item) => sum + (item.quantity || 0), 0)
+                                      ? order.items.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
                                       : 0
                                   }
-                                </div>
-                                <div>
-                                  <span className="font-medium">Méthode:</span> {orderService.getPaymentMethodLabel(order.paymentMethod)}
                                 </div>
                               </div>
                               
@@ -343,12 +337,6 @@ const ProfilePage = () => {
                                   <Eye className="h-4 w-4 mr-2" />
                                   Voir les détails
                                 </Button>
-                                {order.status === OrderStatus.DELIVERED && (
-                                  <Button variant="outline" size="sm">
-                                    <Download className="h-4 w-4 mr-2" />
-                                    Télécharger la facture
-                                  </Button>
-                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -601,7 +589,7 @@ const ProfilePage = () => {
               Détails de la commande
             </DialogTitle>
             <DialogDescription>
-              Commande N° {selectedOrder?.orderNumber}
+              Commande N° {selectedOrder?.id}
             </DialogDescription>
           </DialogHeader>
 
@@ -619,18 +607,16 @@ const ProfilePage = () => {
                           selectedOrder.status === OrderStatus.CANCELLED ? 'destructive' :
                           'secondary'
                         }>
-                          {orderService.getOrderStatusLabel(selectedOrder.status)}
+                          {selectedOrder.status}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Date</span>
                         <span className="text-sm font-medium">
-                          {new Date(selectedOrder.createdAt).toLocaleDateString('fr-FR', {
+                          {new Date(selectedOrder.orderDate).toLocaleDateString('fr-FR', {
                             year: 'numeric',
                             month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            day: 'numeric'
                           })}
                         </span>
                       </div>
@@ -647,49 +633,17 @@ const ProfilePage = () => {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">Paiement</span>
+                        <span className="text-sm text-muted-foreground">Statut</span>
                       </div>
                       <div>
-                        <p className="font-medium">{orderService.getPaymentMethodLabel(selectedOrder.paymentMethod)}</p>
-                        <Badge variant={
-                          selectedOrder.paymentStatus === 'PAID' ? 'default' : 'secondary'
-                        } className="mt-1">
-                          {selectedOrder.paymentStatus === 'PAID' ? 'Payé' :
-                           selectedOrder.paymentStatus === 'PENDING' ? 'En attente' :
-                           selectedOrder.paymentStatus === 'FAILED' ? 'Échoué' : 'Remboursé'}
+                        <Badge variant="default" className="mt-1">
+                          {selectedOrder.status}
                         </Badge>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Adresse de livraison */}
-              {selectedOrder.shippingAddress && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Truck className="h-4 w-4" />
-                      Adresse de livraison
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <p className="font-medium">
-                        {selectedOrder.shippingAddress.firstName} {selectedOrder.shippingAddress.lastName}
-                      </p>
-                      <p className="text-muted-foreground">{selectedOrder.shippingAddress.street}</p>
-                      <p className="text-muted-foreground">
-                        {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}
-                      </p>
-                      <p className="text-muted-foreground">{selectedOrder.shippingAddress.country}</p>
-                      {selectedOrder.shippingAddress.phone && (
-                        <p className="text-muted-foreground">Tél: {selectedOrder.shippingAddress.phone}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Articles commandés */}
               <Card>
@@ -702,35 +656,20 @@ const ProfilePage = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {selectedOrder.items && selectedOrder.items.length > 0 ? (
-                      selectedOrder.items.map((item) => (
-                        <div key={item.id} className="flex items-start gap-4 p-3 border rounded-lg">
-                          {item.product?.image && (
-                            <img
-                              src={item.product.image}
-                              alt={item.product.name}
-                              className="w-20 h-20 object-cover rounded-md"
-                            />
-                          )}
+                      selectedOrder.items.map((item: any, index: number) => (
+                        <div key={index} className="flex items-start gap-4 p-3 border rounded-lg">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-sm mb-1">
-                              {item.product?.name || `Produit #${item.productId}`}
+                              Article {index + 1}
                             </h4>
-                            {item.product?.description && (
-                              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                                {item.product.description}
-                              </p>
-                            )}
                             <div className="flex items-center gap-4 text-sm">
                               <span className="text-muted-foreground">
-                                Quantité: <span className="font-medium text-foreground">{item.quantity}</span>
-                              </span>
-                              <span className="text-muted-foreground">
-                                Prix unitaire: <span className="font-medium text-foreground">{formatPrice(item.price)}</span>
+                                Quantité: <span className="font-medium text-foreground">{item.quantity || 1}</span>
                               </span>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold">{formatPrice(item.price * item.quantity)}</p>
+                            <p className="font-bold">{formatPrice(selectedOrder.totalAmount / selectedOrder.items.length)}</p>
                           </div>
                         </div>
                       ))
@@ -756,17 +695,6 @@ const ProfilePage = () => {
                 </CardContent>
               </Card>
 
-              {/* Notes */}
-              {selectedOrder.notes && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Notes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{selectedOrder.notes}</p>
-                  </CardContent>
-                </Card>
-              )}
             </div>
           )}
         </DialogContent>

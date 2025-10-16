@@ -25,8 +25,8 @@ const LoginPage = () => {
   const [otpCode, setOtpCode] = useState(['', '', '', '']);
   const [otpSending, setOtpSending] = useState(false);
   
-  // Récupérer l'URL de redirection
-  const redirectUrl = searchParams.get('redirect') || '/';
+  // Récupérer l'URL de redirection (par défaut: profil)
+  const redirectUrl = searchParams.get('redirect') || '/profile';
   
   // États pour le formulaire de connexion
   const [loginForm, setLoginForm] = useState({
@@ -141,8 +141,8 @@ const LoginPage = () => {
         password: loginForm.password
       });
       
-      toast({
-        title: "Connexion réussie",
+        toast({
+          title: "Connexion réussie",
         description: "Bienvenue sur Geezaculture !"
       });
       
@@ -312,16 +312,16 @@ const LoginPage = () => {
                 <TabsTrigger value="login">Connexion</TabsTrigger>
                 <TabsTrigger value="register">Inscription</TabsTrigger>
               </TabsList>
-
+              
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div>
                     <Label htmlFor="login-email">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
+                      <Input 
                         id="login-email"
-                        type="email"
+                        type="email" 
                         placeholder="votre@email.com"
                         className="pl-10"
                         value={loginForm.email}
@@ -330,12 +330,12 @@ const LoginPage = () => {
                       />
                     </div>
                   </div>
-
+                  
                   <div>
                     <Label htmlFor="login-password">Mot de passe</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
+                      <Input 
                         id="login-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
@@ -353,21 +353,21 @@ const LoginPage = () => {
                       </button>
                     </div>
                   </div>
-
+                  
                   <Button type="submit" className="w-full ethiopian-button" disabled={isLoading}>
                     {isLoading ? 'Connexion...' : 'Se connecter'}
                   </Button>
                 </form>
               </TabsContent>
-
+              
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="firstName">Prénom</Label>
-                      <Input
-                        id="firstName"
-                        placeholder="Prénom"
+                      <Input 
+                        id="firstName" 
+                        placeholder="Prénom" 
                         value={registerForm.firstName}
                         onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
                         required
@@ -375,19 +375,19 @@ const LoginPage = () => {
                     </div>
                     <div>
                       <Label htmlFor="lastName">Nom</Label>
-                      <Input
-                        id="lastName"
-                        placeholder="Nom"
+                      <Input 
+                        id="lastName" 
+                        placeholder="Nom" 
                         value={registerForm.lastName}
                         onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
-                        required
+                        required 
                       />
                     </div>
                   </div>
-
+                  
                   <div>
                     <Label htmlFor="register-email">Email</Label>
-                    <Input
+                    <Input 
                       id="register-email"
                       type="email"
                       placeholder="votre@email.com"
@@ -396,10 +396,10 @@ const LoginPage = () => {
                       required
                     />
                   </div>
-
+                  
                   <div>
                     <Label htmlFor="register-password">Mot de passe</Label>
-                    <Input
+                    <Input 
                       id="register-password"
                       type="password"
                       placeholder="••••••••"
@@ -408,7 +408,7 @@ const LoginPage = () => {
                       required
                     />
                   </div>
-
+                  
                   <Button type="submit" className="w-full ethiopian-button" disabled={isLoading}>
                     {isLoading ? 'Inscription...' : "S'inscrire"}
                   </Button>
