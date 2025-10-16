@@ -94,12 +94,30 @@ export const cartService = {
       .from('cart_items')
       .select(`
         *,
-        product:ethio_products(id, name, price, image_url, stock, available)
+        product:ethio_products(id, name, description, price, image_url, stock, available, category_id)
       `)
       .eq('cart_id', cart.id)
 
     if (error) throw error
-    return data || []
+    
+    // Mapper pour correspondre au format attendu par le frontend
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      productId: item.product_id,
+      quantity: item.quantity,
+      price: item.product?.price || 0,
+      product: {
+        id: item.product?.id,
+        name: item.product?.name,
+        description: item.product?.description,
+        price: item.product?.price,
+        image: item.product?.image_url, // ⭐ Mapping image_url vers image
+        stock: item.product?.stock,
+        available: item.product?.available,
+        category: item.product?.category_id === 1 ? 'food' : 'art'
+      },
+      addedAt: item.created_at
+    }))
   },
 
   // Ajouter un produit au panier (surcharge pour compatibilité)

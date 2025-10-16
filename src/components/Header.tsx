@@ -11,16 +11,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCartManager } from "@/hooks/useCart";
-import { authService } from "@/services/authService";
+import { authService } from "@/services";
 import { useToast } from "@/hooks/use-toast";
 import { CurrencySelector } from "./CurrencySelector";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { CacheClearButton } from "./CacheClearButton";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { cartItemCount, isLoading: cartLoading } = useCartManager();
-  const isLoggedIn = authService.isAuthenticated();
-  const isAdmin = authService.isAdmin();
+  const { user, isAuthenticated: isLoggedIn } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -121,14 +124,27 @@ const Header = () => {
             </Link>
 
             {/* User Menu */}
-            {isLoggedIn ? (
+            {isLoggedIn && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="p-1.5 sm:p-2 hover:bg-gray-100">
-                    <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
+                  <Button variant="ghost" size="sm" className="p-1.5 sm:p-2 hover:bg-gray-100 flex items-center gap-2">
+                    <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                      <AvatarFallback className="bg-ethiopian-gold text-black text-xs font-semibold">
+                        {user.firstName?.[0]}{user.lastName?.[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden md:inline text-sm font-medium text-gray-700">
+                      {user.firstName}
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 shadow-lg border-0 bg-white/95 backdrop-blur-md">
+                <DropdownMenuContent align="end" className="w-56 shadow-lg border-0 bg-white/95 backdrop-blur-md">
+                  <div className="px-3 py-2 border-b border-gray-200">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
                   <DropdownMenuItem asChild className="cursor-pointer">
                     <Link to="/profile" className="flex items-center px-3 py-2 text-sm">
                       <User className="h-4 w-4 mr-2" />
@@ -141,6 +157,10 @@ const Header = () => {
                       Mes Commandes
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-gray-200" />
+                  <div className="px-2 py-2">
+                    <CacheClearButton />
+                  </div>
                   <DropdownMenuSeparator className="bg-gray-200" />
                   <DropdownMenuItem 
                     onClick={handleLogout}

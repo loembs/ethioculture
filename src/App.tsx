@@ -27,11 +27,13 @@ import { SupabaseDebug } from "@/components/SupabaseDebug";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 30 * 60 * 1000,
-      retry: 2,
-      retryDelay: 1000,
-      refetchOnWindowFocus: false
+      staleTime: 30 * 1000, // 30 secondes au lieu de 5 minutes
+      gcTime: 5 * 60 * 1000, // 5 minutes au lieu de 30 minutes
+      retry: 1, // 1 essai au lieu de 2
+      retryDelay: 500,
+      refetchOnWindowFocus: true, // Recharger quand on revient sur la page
+      refetchOnReconnect: true, // Recharger quand internet revient
+      refetchOnMount: true // Toujours recharger au montage
     }
   }
 });

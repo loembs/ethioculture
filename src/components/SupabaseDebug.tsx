@@ -35,23 +35,27 @@ export const SupabaseDebug = () => {
           envVars: !!(supabaseUrl && supabaseKey)
         }));
 
-        // 2. Test de connexion simple
+        // 2. Test de connexion simple avec les produits publics
         const { data: testData, error: testError } = await supabase
           .from('ethio_products')
           .select('id')
           .limit(1);
 
-        console.log('🔍 Test connexion:', { testData, testError });
-        console.error('📢 ERREUR COMPLÈTE:', testError);
+        console.log('🔍 Test connexion produits:', { testData, testError });
 
-        if (testError) {
+        // Ne pas considérer l'absence de données comme une erreur de connexion
+        if (testError && testError.code !== 'PGRST116') {
+          // PGRST116 = pas de données, ce qui n'est pas une vraie erreur
+          console.error('📢 ERREUR COMPLÈTE:', testError);
           setStatus(prev => ({ 
             ...prev, 
+            connection: false,
             error: `${testError.message} (Code: ${testError.code})` 
           }));
           return;
         }
 
+        // Si on arrive ici, la connexion fonctionne (même si pas de données)
         setStatus(prev => ({ ...prev, connection: true }));
 
         // 3. Compter les produits

@@ -140,12 +140,6 @@ const CuisinePage = () => {
         {/* Produits en vedette - Responsive */}
         {selectedCategory === "tous" && (
           <div className="mb-12 sm:mb-16" id="featured-section">
-            <div className="flex items-center justify-center mb-8 sm:mb-12 animate-cultural-fade-in">
-              <Star className="h-6 w-6 sm:h-8 sm:w-8 text-spice-gold mr-2 sm:mr-4 animate-golden-glow" />
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold ethiopian-text-gradient">Plats en Vedette</h2>
-              <Star className="h-6 w-6 sm:h-8 sm:w-8 text-spice-gold ml-2 sm:ml-4 animate-golden-glow" />
-            </div>
-            
             {isLoading ? (
               <ProductGrid products={[]} isLoading={true} skeletonCount={6} />
             ) : error ? (

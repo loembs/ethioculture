@@ -12,18 +12,32 @@ import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useCartManager } from "@/hooks/useCart";
 import { formatPrice } from "@/utils/currency";
-import { authService } from "@/services/authService";
-import { orderService, CreateOrderRequest } from "@/services/orderService";
+import { orderService } from "@/services";
+import { useAuth } from "@/contexts/AuthContext";
+import { FlutterwavePaymentModal, FlutterwavePaymentConfig } from "@/components/FlutterwavePaymentModal";
+import { paymentService } from "@/services/payment.service";
+
+export interface CreateOrderRequest {
+  items: { product_id: number; quantity: number; unit_price: number }[];
+  total_amount: number;
+  payment_method: string;
+  shipping_address: any;
+  notes?: string;
+  clear_cart?: boolean;
+}
 
 const CheckoutPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { cartItems, cartTotal, isLoading } = useCartManager();
-  const [paymentMethod, setPaymentMethod] = useState("stripe");
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [deliveryMethod, setDeliveryMethod] = useState("livraison");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  
+  // États pour le widget de paiement Flutterwave
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState<FlutterwavePaymentConfig | null>(null);
   
   // États pour le formulaire de livraison
   const [shippingInfo, setShippingInfo] = useState({
@@ -43,80 +57,40 @@ const CheckoutPage = () => {
   const deliveryFee = deliveryMethod === "livraison" ? 5 : 0;
   const total = subtotal + deliveryFee;
 
-  // Vérifier l'authentification au chargement et pré-remplir les informations
+  // Pré-remplir les informations utilisateur et gérer la redirection
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Vérifier d'abord si l'utilisateur est déjà authentifié localement
-        const isAuth = authService.isAuthenticated();
-        if (isAuth) {
-          setIsAuthenticated(true);
-          
-          // Pré-remplir avec les données locales d'abord
-          const localUser = authService.getUser();
-          if (localUser) {
-            setShippingInfo(prev => ({
-              ...prev,
-              firstName: localUser.firstName || '',
-              lastName: localUser.lastName || '',
-              email: localUser.email || '',
-              phone: localUser.phone || ''
-            }));
-          }
-          
-          // Essayer de rafraîchir les données en arrière-plan (optionnel)
-          try {
-            const user = await authService.getCurrentUser();
-            if (user) {
-              setShippingInfo(prev => ({
-                ...prev,
-                firstName: user.firstName || prev.firstName,
-                lastName: user.lastName || prev.lastName,
-                email: user.email || prev.email,
-                phone: user.phone || prev.phone
-              }));
-            }
-          } catch (refreshError) {
-            console.warn('Impossible de rafraîchir les données utilisateur:', refreshError);
-            // Ne pas déconnecter si le refresh échoue, utiliser les données locales
-          }
-        }
-      } catch (error) {
-        console.error('Erreur de vérification auth:', error);
-        // Seulement déconnecter si c'est une erreur d'authentification grave
-        if (error instanceof Error && error.message.includes('401')) {
-          authService.logout();
-        }
-      } finally {
-        setIsCheckingAuth(false);
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        // Rediriger vers la page de connexion avec le chemin de retour
+        navigate(`/login?redirect=${encodeURIComponent('/checkout')}`, { replace: true });
+      } else if (user) {
+        // Pré-remplir avec les données utilisateur
+        setShippingInfo(prev => ({
+          ...prev,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          email: user.email || '',
+          phone: user.phone || ''
+        }));
       }
-    };
-
-    checkAuth();
-  }, []);
-
-  // Rediriger vers login si non authentifié
-  useEffect(() => {
-    if (!isCheckingAuth && !isAuthenticated) {
-      navigate(`/login?redirect=${encodeURIComponent('/checkout')}`, { replace: true });
     }
-  }, [isCheckingAuth, isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, user, navigate]);
 
-  // Ne pas rendre le composant si non authentifié
-  if (!isCheckingAuth && !isAuthenticated) {
-    return null;
-  }
-
-  // Afficher un loader pendant la vérification d'auth
-  if (isCheckingAuth) {
+  // Afficher un loader pendant le chargement de l'authentification
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background py-8">
         <div className="container mx-auto px-4 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-4">Vérification de l'authentification...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ethiopian-gold mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Vérification...</p>
         </div>
       </div>
     );
+  }
+
+  // Ne pas rendre le composant si non authentifié (redirection en cours)
+  if (!isAuthenticated) {
+    return null;
   }
 
   // Rediriger vers le panier si vide
@@ -162,18 +136,21 @@ const CheckoutPage = () => {
       }
 
 
-      // Mapper le paymentMethod vers les valeurs du backend
+      // Mapper le paymentMethod vers les valeurs acceptées par la base de données
+      // Valeurs autorisées: 'WAVE', 'ORANGE_MONEY', 'FREE_MONEY', 'CARD', 'CASH'
       const mapPaymentMethod = (method: string): string => {
         const mapping: Record<string, string> = {
-          'carte': 'CREDIT_CARD',
-          'stripe': 'CREDIT_CARD',
-          'paypal': 'PAYPAL',
-          'virement': 'BANK_TRANSFER',
-          'livraison': 'CASH_ON_DELIVERY',
-          'wave': 'CASH_ON_DELIVERY',  // Temporaire jusqu'à ajout dans le backend
-          'orange': 'CASH_ON_DELIVERY'  // Temporaire jusqu'à ajout dans le backend
+          'card': 'CARD',
+          'carte': 'CARD',
+          'stripe': 'CARD',
+          'paypal': 'CARD',
+          'virement': 'CARD',
+          'livraison': 'CASH',
+          'wave': 'WAVE',
+          'orange': 'ORANGE_MONEY',
+          'free': 'FREE_MONEY'
         };
-        const mapped = mapping[method.toLowerCase()] || 'CREDIT_CARD';
+        const mapped = mapping[method.toLowerCase()] || 'CARD';
         console.log('🔍 Payment method mapping:', { original: method, mapped });
         return mapped;
       };
@@ -181,20 +158,22 @@ const CheckoutPage = () => {
       // Préparer les données de commande
       const orderData: CreateOrderRequest = {
         items: (cartItems || []).map(item => ({
-          productId: item.productId,
-          quantity: item.quantity
+          product_id: item.productId,
+          quantity: item.quantity,
+          unit_price: item.price
         })),
-        shippingAddress: {
-          firstName: shippingInfo.firstName.trim(),
-          lastName: shippingInfo.lastName.trim(),
+        total_amount: total,
+        shipping_address: {
+          first_name: shippingInfo.firstName.trim(),
+          last_name: shippingInfo.lastName.trim(),
           street: shippingInfo.address.trim(),
           city: shippingInfo.city.trim(),
           country: shippingInfo.country.trim(),
-          postalCode: shippingInfo.postalCode.trim(),
+          postal_code: shippingInfo.postalCode.trim(),
           phone: shippingInfo.phone.trim()
         },
-        paymentMethod: mapPaymentMethod(paymentMethod) as any,
-        notes: shippingInfo.notes ? shippingInfo.notes.trim() : undefined
+        payment_method: mapPaymentMethod(paymentMethod),
+        notes: shippingInfo.notes && shippingInfo.notes.trim() !== '' ? shippingInfo.notes.trim() : undefined
       };
 
       console.log('🔍 ===== ORDER DATA BEING SENT TO BACKEND =====');
@@ -203,28 +182,15 @@ const CheckoutPage = () => {
         count: orderData.items.length,
         items: orderData.items
       });
-      console.log('🔍 Shipping Address:', orderData.shippingAddress);
-      console.log('🔍 Payment Method:', orderData.paymentMethod);
-      console.log('🔍 Notes:', orderData.notes);
-      
-      // Vérifier chaque champ individuellement
-      console.log('🔍 Field validation:');
-      console.log('  - firstName:', orderData.shippingAddress.firstName, '(length:', orderData.shippingAddress.firstName?.length, ')');
-      console.log('  - lastName:', orderData.shippingAddress.lastName, '(length:', orderData.shippingAddress.lastName?.length, ')');
-      console.log('  - street:', orderData.shippingAddress.street, '(length:', orderData.shippingAddress.street?.length, ')');
-      console.log('  - city:', orderData.shippingAddress.city, '(length:', orderData.shippingAddress.city?.length, ')');
-      console.log('  - postalCode:', orderData.shippingAddress.postalCode, '(length:', orderData.shippingAddress.postalCode?.length, ')');
-      console.log('  - country:', orderData.shippingAddress.country, '(length:', orderData.shippingAddress.country?.length, ')');
-      console.log('  - phone:', orderData.shippingAddress.phone, '(length:', orderData.shippingAddress.phone?.length, ')');
-      console.log('🔍 ==========================================');
+
 
       // Validation côté client
       if (!orderData.items || orderData.items.length === 0) {
         throw new Error('Le panier est vide. Ajoutez des articles avant de passer commande.');
       }
 
-      // Vérifier que tous les articles ont un productId valide
-      const invalidItems = orderData.items.filter(item => !item.productId || item.quantity <= 0);
+      // Vérifier que tous les articles ont un product_id valide
+      const invalidItems = orderData.items.filter(item => !item.product_id || item.quantity <= 0);
       if (invalidItems.length > 0) {
         throw new Error('Certains articles du panier sont invalides. Veuillez réessayer.');
       }
@@ -232,13 +198,62 @@ const CheckoutPage = () => {
       // Créer la commande
       const createdOrder = await orderService.createOrder(orderData);
       
+      console.log('✅ Commande créée:', createdOrder);
+
       toast({
         title: "Commande créée avec succès",
-        description: `Commande #${createdOrder.orderNumber} enregistrée`
+        description: `Commande #${createdOrder.orderNumber} - Passez au paiement`
       });
 
-      // Rediriger vers le paiement avec l'ID de commande
-      navigate(`/payment/${createdOrder.id}?amount=${total}&method=${paymentMethod}`);
+      // Préparer la configuration du widget de paiement Flutterwave
+      const paymentWidgetConfig: FlutterwavePaymentConfig = {
+        amount: total,
+        email: shippingInfo.email,
+        phone: shippingInfo.phone,
+        name: `${shippingInfo.firstName} ${shippingInfo.lastName}`,
+        orderId: createdOrder.id,
+        orderNumber: createdOrder.orderNumber,
+        onSuccess: async (response) => {
+          console.log('🎉 Paiement réussi!', response);
+          
+          try {
+            // Mettre à jour le statut de la commande
+            await paymentService.updateOrderPaymentStatus(
+              createdOrder.id, 
+              'PAID',
+              response.transaction_id
+            );
+
+            toast({
+              title: "Paiement confirmé!",
+              description: "Votre commande a été confirmée avec succès"
+            });
+
+            // Rediriger vers la page de profil/commandes
+            setTimeout(() => {
+              navigate('/profile?tab=orders');
+            }, 1500);
+          } catch (error) {
+            console.error('❌ Erreur mise à jour commande:', error);
+            toast({
+              title: "Attention",
+              description: "Le paiement est réussi mais la commande n'a pas pu être mise à jour. Contactez le support.",
+              variant: "destructive"
+            });
+          }
+        },
+        onClose: () => {
+          console.log('❌ Widget de paiement fermé');
+          toast({
+            title: "Paiement annulé",
+            description: "Vous pouvez retenter le paiement depuis votre profil",
+            variant: "destructive"
+          });
+        }
+      };
+
+      setPaymentConfig(paymentWidgetConfig);
+      setShowPaymentModal(true);
 
     } catch (error: any) {
       console.error('❌ ===== ERREUR LORS DE LA CRÉATION DE LA COMMANDE =====');
@@ -288,10 +303,18 @@ const CheckoutPage = () => {
   };
 
   const paymentOptions = [
-    { id: "stripe", name: "Carte bancaire (Stripe)", icon: CreditCard, description: "Visa, Mastercard, Apple Pay, Google Pay" },
-    { id: "paypal", name: "PayPal", icon: Wallet, description: "Paiement sécurisé via PayPal" },
-    { id: "wave", name: "Wave Money", icon: Smartphone, description: "Paiement mobile en Afrique" },
-    { id: "orange", name: "Orange Money", icon: Smartphone, description: "Service de paiement mobile" }
+    { 
+      id: "card", 
+      name: "Carte bancaire", 
+      icon: CreditCard, 
+      description: "Paiement sécurisé",
+      providers: [
+        { name: "Visa", logo: "💳" },
+        { name: "Mastercard", logo: "💳" },
+        { name: "Apple Pay", logo: "" },
+        { name: "Google Pay", logo: "🌐" }
+      ]
+    }
   ];
 
   return (
@@ -462,17 +485,29 @@ const CheckoutPage = () => {
                 <CardContent>
                   <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                     {paymentOptions.map((option) => (
-                      <div key={option.id} className="flex items-center space-x-2 p-2 sm:p-3 border rounded-lg">
-                        <RadioGroupItem value={option.id} id={option.id} />
-                        <Label htmlFor={option.id} className="flex-1 cursor-pointer">
-                          <div className="flex items-center">
-                            <option.icon className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-muted-foreground" />
-                            <div>
-                              <div className="font-medium text-sm sm:text-base">{option.name}</div>
-                              <div className="text-xs sm:text-sm text-muted-foreground">{option.description}</div>
+                      <div key={option.id} className="p-4 border-2 border-ethiopian-gold/20 rounded-lg bg-gradient-to-br from-white to-gray-50">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <RadioGroupItem value={option.id} id={option.id} />
+                          <Label htmlFor={option.id} className="flex-1 cursor-pointer">
+                            <div className="flex items-center">
+                              <option.icon className="h-5 w-5 mr-3 text-ethiopian-gold" />
+                              <div>
+                                <div className="font-semibold text-base">{option.name}</div>
+                                <div className="text-xs text-muted-foreground">{option.description}</div>
+                              </div>
                             </div>
-                          </div>
-                        </Label>
+                          </Label>
+                        </div>
+                        
+                        {/* Logos des providers */}
+                        <div className="flex items-center gap-3 ml-8 flex-wrap">
+                          {option.providers.map((provider, idx) => (
+                            <div key={idx} className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-md shadow-sm">
+                              <span className="text-lg">{provider.logo}</span>
+                              <span className="text-xs font-medium text-gray-700">{provider.name}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </RadioGroup>
@@ -572,6 +607,15 @@ const CheckoutPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Widget de paiement Flutterwave */}
+      {paymentConfig && (
+        <FlutterwavePaymentModal
+          config={paymentConfig}
+          isOpen={showPaymentModal}
+          onOpenChange={setShowPaymentModal}
+        />
+      )}
     </div>
   );
 };
