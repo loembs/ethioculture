@@ -241,3 +241,6 @@ npm run dev
 
 Si vous rencontrez encore des soucis, utilisez le bouton "Actualiser" dans votre menu utilisateur.
 
+
+
+

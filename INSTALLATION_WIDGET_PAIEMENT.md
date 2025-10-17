@@ -220,3 +220,6 @@ Votre site e-commerce a maintenant un **vrai système de paiement professionnel*
 
 **Bon commerce ! 🛍️💰**
 
+
+
+

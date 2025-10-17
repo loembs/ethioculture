@@ -58,6 +58,7 @@ const Header = () => {
     { name: "Accueil", path: "/" },
     { name: "Cuisine", path: "/cuisine" },
     { name: "Art & Culture", path: "/art" },
+    { name: "Concept Store", path: "/concept-store" },
     ...(isAdmin ? [{ name: "Dashboard", path: "/admin", icon: BarChart3 }] : [])
   ];
 

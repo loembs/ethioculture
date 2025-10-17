@@ -232,3 +232,6 @@ Utilisez le bouton "Vider Cache" 🗑️ (vous serez déconnecté, c'est normal)
 
 Le bouton "Actualiser" ne vous déconnecte plus et fonctionne intelligemment.
 
+
+
+

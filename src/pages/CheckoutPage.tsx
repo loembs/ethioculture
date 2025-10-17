@@ -16,6 +16,7 @@ import { orderService } from "@/services";
 import { useAuth } from "@/contexts/AuthContext";
 import { FlutterwavePaymentModal, FlutterwavePaymentConfig } from "@/components/FlutterwavePaymentModal";
 import { paymentService } from "@/services/payment.service";
+import { secureOrderData as validateAndSecureOrder, paymentGuard } from "@/middleware/securityMiddleware";
 
 export interface CreateOrderRequest {
   items: { product_id: number; quantity: number; unit_price: number }[];
@@ -176,29 +177,23 @@ const CheckoutPage = () => {
         notes: shippingInfo.notes && shippingInfo.notes.trim() !== '' ? shippingInfo.notes.trim() : undefined
       };
 
-      console.log('🔍 ===== ORDER DATA BEING SENT TO BACKEND =====');
-      console.log('🔍 Full orderData:', JSON.stringify(orderData, null, 2));
-      console.log('🔍 Items:', {
-        count: orderData.items.length,
-        items: orderData.items
-      });
-
-
-      // Validation côté client
-      if (!orderData.items || orderData.items.length === 0) {
-        throw new Error('Le panier est vide. Ajoutez des articles avant de passer commande.');
-      }
-
-      // Vérifier que tous les articles ont un product_id valide
-      const invalidItems = orderData.items.filter(item => !item.product_id || item.quantity <= 0);
-      if (invalidItems.length > 0) {
-        throw new Error('Certains articles du panier sont invalides. Veuillez réessayer.');
-      }
-
-      // Créer la commande
-      const createdOrder = await orderService.createOrder(orderData);
+      // Sécurisation des données de commande
+      const { valid, sanitized, error: securityError } = validateAndSecureOrder(orderData);
       
-      console.log('✅ Commande créée:', createdOrder);
+      if (!valid) {
+        throw new Error(securityError || 'Données invalides');
+      }
+
+      // Utiliser les données sanitisées
+      const sanitizedOrderData = sanitized!;
+
+      // Créer la commande avec les données sécurisées
+      const createdOrder = await orderService.createOrder(sanitizedOrderData);
+      
+      // Vérifier protection anti-doublons
+      if (!paymentGuard.startProcessing(createdOrder.id.toString())) {
+        throw new Error('Un paiement est déjà en cours pour cette commande');
+      }
 
       toast({
         title: "Commande créée avec succès",
@@ -214,8 +209,6 @@ const CheckoutPage = () => {
         orderId: createdOrder.id,
         orderNumber: createdOrder.orderNumber,
         onSuccess: async (response) => {
-          console.log('🎉 Paiement réussi!', response);
-          
           try {
             // Mettre à jour le statut de la commande
             await paymentService.updateOrderPaymentStatus(
@@ -223,6 +216,9 @@ const CheckoutPage = () => {
               'PAID',
               response.transaction_id
             );
+
+            // Marquer comme complété
+            paymentGuard.finishProcessing(createdOrder.id.toString(), true);
 
             toast({
               title: "Paiement confirmé!",
@@ -234,16 +230,16 @@ const CheckoutPage = () => {
               navigate('/profile?tab=orders');
             }, 1500);
           } catch (error) {
-            console.error('❌ Erreur mise à jour commande:', error);
+            paymentGuard.finishProcessing(createdOrder.id.toString(), false);
             toast({
-              title: "Attention",
-              description: "Le paiement est réussi mais la commande n'a pas pu être mise à jour. Contactez le support.",
+              title: "Erreur",
+              description: "Une erreur est survenue. Contactez le support.",
               variant: "destructive"
             });
           }
         },
         onClose: () => {
-          console.log('❌ Widget de paiement fermé');
+          paymentGuard.finishProcessing(createdOrder.id.toString(), false);
           toast({
             title: "Paiement annulé",
             description: "Vous pouvez retenter le paiement depuis votre profil",
@@ -256,45 +252,25 @@ const CheckoutPage = () => {
       setShowPaymentModal(true);
 
     } catch (error: any) {
-      console.error('❌ ===== ERREUR LORS DE LA CRÉATION DE LA COMMANDE =====');
-      console.error('❌ Error object:', error);
-      console.error('❌ Error response:', error.response);
-      console.error('❌ Error data:', error.response?.data);
-      console.error('❌ ====================================================');
-      
-      // Gestion spécifique des erreurs de validation (400)
+      // Messages d'erreur génériques pour ne pas exposer de détails techniques
       let errorMessage = "Impossible de créer la commande. Veuillez réessayer.";
-      let errorDetails = "";
       
-      if (error.response?.status === 400) {
-        // Erreur de validation
-        const responseData = error.response.data;
-        
-        if (responseData?.data && typeof responseData.data === 'object') {
-          // Afficher les erreurs de validation champ par champ
-          const validationErrors = Object.entries(responseData.data)
-            .map(([field, message]) => `${field}: ${message}`)
-            .join('\n');
-          errorDetails = validationErrors;
-          errorMessage = "Erreur de validation des données";
-        } else if (responseData?.message) {
-          errorMessage = responseData.message;
-        }
-      } else if (error instanceof Error) {
-        if (error.message.includes('Failed to fetch') || 
-            error.message.includes('ERR_HTTP2_PING_FAILED') ||
-            error.message.includes('ERR_NETWORK')) {
-          errorMessage = "Serveur temporairement indisponible. Veuillez réessayer dans quelques minutes.";
-        } else if (error.message.includes('timeout')) {
-          errorMessage = "La requête a pris trop de temps. Veuillez réessayer.";
+      if (error instanceof Error) {
+        // Messages génériques uniquement
+        if (error.message.includes('temporairement')) {
+          errorMessage = "Service temporairement indisponible. Veuillez réessayer.";
+        } else if (error.message.includes('invalide')) {
+          errorMessage = "Certaines informations sont invalides. Veuillez vérifier.";
+        } else if (error.message.includes('authentif')) {
+          errorMessage = "Veuillez vous reconnecter.";
         } else {
-          errorMessage = error.message;
+          errorMessage = "Une erreur est survenue. Veuillez réessayer.";
         }
       }
       
       toast({
-        title: "Erreur de commande",
-        description: errorDetails || errorMessage,
+        title: "Erreur",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

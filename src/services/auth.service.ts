@@ -243,6 +243,33 @@ export const authService = {
     }
   },
 
+  // Réinitialisation du mot de passe - Étape 1: Envoyer l'email
+  async sendPasswordResetEmail(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    })
+
+    if (error) throw error
+    return { success: true }
+  },
+
+  // Réinitialisation du mot de passe - Étape 2: Mettre à jour le mot de passe
+  async updatePassword(newPassword: string) {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    })
+
+    if (error) throw error
+    return { success: true }
+  },
+
+  // Vérifier si l'utilisateur vient d'un lien de réinitialisation
+  async isPasswordResetSession() {
+    const { data: { session } } = await supabase.auth.getSession()
+    // Vérifier si l'utilisateur a un token de récupération actif
+    return session?.user?.recovery_sent_at !== undefined
+  },
+
   // Écouter les changements d'authentification
   onAuthStateChange(callback: (user: any) => void) {
     return supabase.auth.onAuthStateChange((event, session) => {

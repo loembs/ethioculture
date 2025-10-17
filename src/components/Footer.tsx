@@ -208,14 +208,14 @@ export const Footer = () => {
               <div className="flex items-center mb-4 sm:mb-6">
                 <img 
                   src="https://res.cloudinary.com/dprbhsvxl/image/upload/v1758215446/Simple_Modern_Minimalist_Circle_Design_Studio_Logo-removebg-preview_brerxw.png" 
-                  alt="EthioCulture Logo" 
+                  alt="GeezaCulture Logo" 
                   className="h-8 sm:h-10 lg:h-12 w-auto mr-2 sm:mr-3" 
                 />
-                <span className="text-lg sm:text-xl lg:text-2xl font-bold">EthioCulture</span>
+                <span className="text-lg sm:text-xl lg:text-2xl font-bold">GeezaCulture</span>
               </div>
               <p className="text-white/80 mb-4 sm:mb-6 max-w-md text-sm sm:text-base">
-                Découvrez l'authenticité de la culture éthiopienne à travers notre sélection de plats traditionnels 
-                et d'œuvres d'art uniques. Une expérience culturelle complète.
+                Un pont entre les cultures, les saveurs et la créativité. 
+                Découvrez l'authenticité de la cuisine éthiopienne et l'art africain à travers Geeza.
               </p>
               
               {/* Contact Info - Responsive */}
@@ -230,7 +230,7 @@ export const Footer = () => {
                 </div>
                 <div className="flex items-center text-white/80 text-sm sm:text-base">
                   <Mail className="h-4 w-4 sm:h-5 sm:w-5 mr-2 sm:mr-3 text-ethiopian-gold flex-shrink-0" />
-                  <span className="break-all">contact@ethioculture.fr</span>
+                  <span className="break-all">geezacultures@gmail.com</span>
                 </div>
               </div>
             </div>
@@ -240,17 +240,11 @@ export const Footer = () => {
               <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-ethiopian-gold">
                 Cuisine
               </h4>
-              <ul className="space-y-2">
-                {footerLinks.cuisine.map((link) => (
-                  <li key={link.label}>
-                    <Link 
-                      to={link.href}
-                      className="text-white/80 hover:text-ethiopian-gold transition-colors text-sm sm:text-base"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+              <ul className="space-y-2 text-white/70 text-sm sm:text-base">
+                <li>Plats traditionnels</li>
+                <li>Entrées</li>
+                <li>Desserts</li>
+                <li>Épices</li>
               </ul>
             </div>
 
@@ -259,17 +253,11 @@ export const Footer = () => {
               <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-ethiopian-gold">
                 Art & Culture
               </h4>
-              <ul className="space-y-2">
-                {footerLinks.art.map((link) => (
-                  <li key={link.label}>
-                    <Link 
-                      to={link.href}
-                      className="text-white/80 hover:text-ethiopian-gold transition-colors text-sm sm:text-base"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+              <ul className="space-y-2 text-white/70 text-sm sm:text-base">
+                <li>Peintures</li>
+                <li>Sculptures</li>
+                <li>Photographie</li>
+                <li>Artisanat</li>
               </ul>
             </div>
 
@@ -278,17 +266,11 @@ export const Footer = () => {
               <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-ethiopian-gold">
                 Support
               </h4>
-              <ul className="space-y-2">
-                {footerLinks.support.map((link) => (
-                  <li key={link.label}>
-                    <Link 
-                      to={link.href}
-                      className="text-white/80 hover:text-ethiopian-gold transition-colors text-sm sm:text-base"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+              <ul className="space-y-2 text-white/70 text-sm sm:text-base">
+                <li>Centre d'aide</li>
+                <li>Contact</li>
+                <li>Livraison</li>
+                <li>Retours</li>
               </ul>
             </div>
           </div>
@@ -371,7 +353,7 @@ export const Footer = () => {
                          value={adminForm.email}
                          onChange={(e) => setAdminForm({...adminForm, email: e.target.value})}
                          className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/20"
-                         placeholder="admin@ethioculture.com"
+                          placeholder="admin@geezaculture.com"
                          required
                        />
                      </div>
@@ -474,7 +456,7 @@ export const Footer = () => {
             
             {/* Copyright */}
             <div className="flex items-center text-white/60 text-xs sm:text-sm text-center sm:text-left">
-              <span>© {currentYear} EthioCulture. Tous droits réservés.</span>
+              <span>© {currentYear} GeezaCulture. Tous droits réservés.</span>
             </div>
 
             {/* Legal Links */}

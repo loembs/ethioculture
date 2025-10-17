@@ -224,3 +224,6 @@ Vous pourrez :
 Les erreurs que vous voyez sont NORMALES tant que la clé n'est pas configurée.
 Dès que vous ajoutez la clé, elles disparaissent automatiquement.
 
+
+
+

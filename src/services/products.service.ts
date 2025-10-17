@@ -23,11 +23,6 @@ export const productsService = {
       query = query.eq('category_id', 2)
     }
 
-    // Filtrer par sous-catégorie
-    if (filters?.subcategory) {
-      query = query.eq('subcategory.name', filters.subcategory)
-    }
-
     // Recherche
     if (filters?.search) {
       query = query.ilike('name', `%${filters.search}%`)
@@ -37,7 +32,7 @@ export const productsService = {
     if (error) throw error
 
     // Mapper au format attendu par le frontend
-    const mappedProducts = (data || []).map((item: any) => ({
+    let mappedProducts = (data || []).map((item: any) => ({
       id: item.id,
       name: item.name,
       description: item.description,
@@ -54,6 +49,22 @@ export const productsService = {
       createdAt: item.created_at,
       updatedAt: item.updated_at
     }))
+
+    // Filtrer par sous-catégorie côté client (après le mapping)
+    if (filters?.subcategory) {
+      console.log('🔍 Filtrage par subcategory:', filters.subcategory);
+      console.log('🔍 Produits avant filtre:', mappedProducts.length);
+      
+      mappedProducts = mappedProducts.filter((product: any) => {
+        const match = product.subcategory?.toLowerCase() === filters.subcategory.toLowerCase();
+        if (match) {
+          console.log('✅ Match:', product.name, '- subcategory:', product.subcategory);
+        }
+        return match;
+      });
+      
+      console.log('🔍 Produits après filtre:', mappedProducts.length);
+    }
 
     return {
       content: mappedProducts,

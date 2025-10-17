@@ -16,17 +16,70 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-// Créer le client Supabase (singleton)
+// Configuration du stockage personnalisé pour éviter les corruptions
+const customStorage = {
+  getItem: (key: string) => {
+    try {
+      return window.localStorage.getItem(key);
+    } catch (error) {
+      console.error('❌ Erreur lecture storage:', error);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch (error) {
+      console.error('❌ Erreur écriture storage:', error);
+      // Si le localStorage est plein, nettoyer et réessayer
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.log('🧹 localStorage plein, nettoyage automatique...');
+        const auth = window.localStorage.getItem('geeza-auth');
+        window.localStorage.clear();
+        if (auth) window.localStorage.setItem('geeza-auth', auth);
+        // Réessayer
+        try {
+          window.localStorage.setItem(key, value);
+        } catch (e) {
+          console.error('❌ Impossible d\'écrire même après nettoyage');
+        }
+      }
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      window.localStorage.removeItem(key);
+    } catch (error) {
+      console.error('❌ Erreur suppression storage:', error);
+    }
+  }
+};
+
+// Créer le client Supabase (singleton) avec protection localStorage
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: window.localStorage,
-    storageKey: 'ethioculture-auth'
+    storage: customStorage as any,
+    storageKey: 'geeza-auth',
+    debug: false
   },
   db: {
     schema: 'public'
+  },
+  global: {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'x-client-info': 'geeza-web'
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
   }
 })
 

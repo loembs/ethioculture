@@ -34,8 +34,6 @@ export const paymentService = {
    */
   async initiatePayment(request: PaymentRequest): Promise<FlutterwaveResponse> {
     try {
-      console.log('🔄 Initiation du paiement Flutterwave:', request);
-      
       const response = await fetch(`${supabaseUrl}/functions/v1/initiate-payment`, {
         method: 'POST',
         headers: {
@@ -46,16 +44,13 @@ export const paymentService = {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erreur lors de l\'initiation du paiement');
+        throw new Error('Impossible d\'initier le paiement');
       }
 
       const data = await response.json();
-      console.log('✅ Paiement initié:', data);
       return data;
     } catch (error) {
-      console.error('❌ Erreur initiation paiement:', error);
-      throw error;
+      throw new Error('Service de paiement temporairement indisponible');
     }
   },
 
@@ -64,8 +59,6 @@ export const paymentService = {
    */
   async verifyAndConfirmPayment(verification: PaymentVerificationRequest) {
     try {
-      console.log('🔄 Vérification et confirmation du paiement:', verification);
-      
       const response = await fetch(`${supabaseUrl}/functions/v1/verify-payment`, {
         method: 'POST',
         headers: {
@@ -80,16 +73,13 @@ export const paymentService = {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erreur lors de la vérification');
+        throw new Error('Vérification du paiement impossible');
       }
 
       const data = await response.json();
-      console.log('✅ Paiement vérifié et confirmé:', data);
       return data;
     } catch (error) {
-      console.error('❌ Erreur vérification paiement:', error);
-      throw error;
+      throw new Error('Erreur de vérification');
     }
   },
 
@@ -98,8 +88,6 @@ export const paymentService = {
    */
   async verifyPayment(transactionId: string) {
     try {
-      console.log('🔄 Vérification du paiement:', transactionId);
-      
       const response = await fetch(`${supabaseUrl}/functions/v1/verify-payment`, {
         method: 'POST',
         headers: {
@@ -110,16 +98,13 @@ export const paymentService = {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erreur lors de la vérification');
+        throw new Error('Vérification impossible');
       }
 
       const data = await response.json();
-      console.log('✅ Paiement vérifié:', data);
       return data;
     } catch (error) {
-      console.error('❌ Erreur vérification paiement:', error);
-      throw error;
+      throw new Error('Erreur de vérification');
     }
   },
 
@@ -137,13 +122,11 @@ export const paymentService = {
         })
         .eq('id', orderId);
 
-      if (error) throw error;
+      if (error) throw new Error('Mise à jour impossible');
 
-      console.log(`✅ Commande ${orderId} mise à jour: ${status}`);
       return true;
     } catch (error) {
-      console.error('❌ Erreur mise à jour commande:', error);
-      throw error;
+      throw new Error('Erreur de mise à jour');
     }
   },
 

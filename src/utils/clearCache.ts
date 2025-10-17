@@ -50,7 +50,7 @@ export const clearAuthCache = () => {
     
     // Supprimer uniquement les clés liées à l'auth
     const authKeys = [
-      'ethioculture-auth',
+      'geeza-auth',
       'sb-mjmihwjjoknmssnkhpua-auth-token'
     ];
     

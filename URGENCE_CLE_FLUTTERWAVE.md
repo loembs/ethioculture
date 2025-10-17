@@ -157,3 +157,6 @@ OTP    : 12345
 
 **Configurez votre clé et réessayez ! Le widget devrait fonctionner parfaitement ! 🚀**
 
+
+
+

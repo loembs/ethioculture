@@ -64,8 +64,8 @@ const CuisinePage = () => {
           <div className="absolute bottom-16 sm:bottom-20 right-16 sm:right-32 w-2 sm:w-3 h-2 sm:h-3 bg-ethiopian-red rounded-full animate-spice-float opacity-30 animate-delay-400"></div>
         </div>
         
-        {/* Titre principal - Responsive */}
-        <div className="text-center mb-6 sm:mb-8 relative z-20 px-4 sm:ml-16 md:ml-24">
+        {/* Titre principal - Masqué en mobile, visible en desktop */}
+        <div className="text-center mb-6 sm:mb-8 relative z-20 px-4 sm:ml-16 md:ml-24 hidden sm:block">
           <div className="flex items-center justify-center mb-3 sm:mb-4">
             <ChefHat className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-yellow-400 mr-2 sm:mr-4 animate-pulse" />
             <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white drop-shadow-2xl">
@@ -77,15 +77,18 @@ const CuisinePage = () => {
           </p>
         </div>
 
-        {/* Carrousel dynamique d'image ronde centrée */}
+        {/* Carrousel dynamique d'image ronde - Centré et optimisé mobile */}
         <div className="relative z-10 w-full">
-          <DynamicDishCarousel products={products} />
+          {/* Centrage parfait du carrousel */}
+          <div className="flex items-center justify-center">
+            <DynamicDishCarousel products={products} />
+          </div>
           
-          {/* Bouton d'action centré - Responsive */}
-          <div className="flex justify-center mt-8 sm:mt-12 lg:mt-16 relative z-20 px-4">
+          {/* Bouton d'action - Visible seulement en desktop */}
+          <div className="hidden sm:flex justify-center mt-8 sm:mt-12 lg:mt-16 relative z-20 px-4">
             <Button 
               size="lg" 
-              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm sm:text-base lg:text-lg px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300 font-semibold w-full sm:w-auto max-w-xs sm:max-w-none"
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm sm:text-base lg:text-lg px-6 sm:px-8 lg:px-10 py-3 sm:py-4 rounded-full shadow-2xl transform hover:scale-105 transition-all duration-300 font-semibold"
               onClick={() => document.getElementById('menu-section')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <Utensils className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />

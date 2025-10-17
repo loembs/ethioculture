@@ -13,7 +13,8 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { artistsService } from "@/services";
 import { ProductFiltersAdvanced } from "@/components/ProductFiltersAdvanced";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 interface Artist {
   id: number;
@@ -136,14 +137,16 @@ const ArtPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [priceFilters, setPriceFilters] = useState<any>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { filters, updateFilters } = useProductFilters();
   
-  // Filtrer pour la catégorie art avec filtres e-commerce
-  const artFilters = { 
+  // Filtrer UNIQUEMENT les oeuvres d'art (exclure les événements)
+  const artworkFilters = { 
     category: 'art' as const,
     search: searchQuery || filters.search
   };
-  const { data: productsData, isLoading, error } = useProducts(artFilters);
+  const { data: productsData, isLoading, error } = useProducts(artworkFilters);
 
   // Récupérer les artistes depuis Supabase
   const { data: artists, isLoading: artistsLoading } = useQuery({
@@ -159,7 +162,7 @@ const ArtPage = () => {
     staleTime: 15 * 60 * 1000
   });
 
-  // Filtrer les événements
+  // Filtrer les événements SÉPARÉMENT
   const eventFilters = { 
     category: 'art' as const,
     subcategory: 'Evenements'
@@ -167,8 +170,10 @@ const ArtPage = () => {
   const { data: eventsData, isLoading: eventsLoading, error: eventsError } = useProducts(eventFilters);
   const events = eventsData?.content || [];
   
-  // Produits pour l'onglet Œuvres d'Art
-  let products = productsData?.content || [];
+  // Produits pour l'onglet Œuvres d'Art (EXCLURE les événements)
+  let products = (productsData?.content || []).filter(p => 
+    p.subcategory !== 'Evenements' && p.subcategory !== 'evenements'
+  );
   
   // Appliquer les filtres de prix
   if (priceFilters.minPrice || priceFilters.maxPrice) {
@@ -188,6 +193,27 @@ const ArtPage = () => {
     products = [...products].sort((a, b) => (b.totalSales || 0) - (a.totalSales || 0));
   }
 
+  // Pagination
+  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = products.slice(startIndex, endIndex);
+
+  // Réinitialiser la page lors du changement de filtres
+  const handleFilterChange = (filters: any) => {
+    setPriceFilters(filters);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -241,21 +267,18 @@ const ArtPage = () => {
 
       <div className="container mx-auto px-4 py-8 sm:py-12" id="art-section">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full md:w-auto md:grid-cols-3 mb-6 sm:mb-8">
-            <TabsTrigger value="oeuvres" className="flex items-center text-xs sm:text-sm px-2 sm:px-4">
-              <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Œuvres d'Art</span>
-              <span className="sm:hidden">Art</span>
+          <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-flex mb-6 sm:mb-8">
+            <TabsTrigger value="oeuvres" className="flex items-center justify-center text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-3">
+              <Eye className="h-4 w-4 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="truncate">Œuvres d'Art</span>
             </TabsTrigger>
-            <TabsTrigger value="evenements" className="flex items-center text-xs sm:text-sm px-2 sm:px-4">
-              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Événements</span>
-              <span className="sm:hidden">Events</span>
+            <TabsTrigger value="evenements" className="flex items-center justify-center text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-3">
+              <Calendar className="h-4 w-4 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="truncate">Événements</span>
             </TabsTrigger>
-            <TabsTrigger value="billetterie" className="flex items-center text-xs sm:text-sm px-2 sm:px-4">
-              <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Billetterie</span>
-              <span className="sm:hidden">Tickets</span>
+            <TabsTrigger value="billetterie" className="flex items-center justify-center text-xs sm:text-sm px-3 sm:px-4 py-2 sm:py-3">
+              <Users className="h-4 w-4 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="truncate">Billetterie</span>
             </TabsTrigger>
           </TabsList>
 
@@ -310,13 +333,13 @@ const ArtPage = () => {
                       type="text"
                       placeholder="Rechercher une œuvre d'art..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10"
                     />
                   </div>
 
                   {/* Tri */}
-                  <Select value={sortBy} onValueChange={setSortBy}>
+                  <Select value={sortBy} onValueChange={handleSortChange}>
                     <SelectTrigger className="w-full lg:w-[200px]">
                       <SelectValue placeholder="Trier par" />
                     </SelectTrigger>
@@ -331,13 +354,20 @@ const ArtPage = () => {
 
                 {/* Filtres avancés */}
                 <ProductFiltersAdvanced 
-                  onFilterChange={setPriceFilters}
-                  maxPrice={50000}
+                  onFilterChange={handleFilterChange}
+                  maxPrice={5000000}
                 />
 
                 {/* Résultats */}
-                <div className="mb-4 text-sm text-muted-foreground">
-                  {products.length} œuvre{products.length > 1 ? 's' : ''} trouvée{products.length > 1 ? 's' : ''}
+                <div className="mb-4 text-sm text-muted-foreground flex items-center justify-between">
+                  <span>
+                    {products.length} œuvre{products.length > 1 ? 's' : ''} trouvée{products.length > 1 ? 's' : ''}
+                    {products.length > itemsPerPage && (
+                      <span className="ml-2">
+                        (page {currentPage} sur {totalPages})
+                      </span>
+                    )}
+                  </span>
                 </div>
 
                 {/* Affichage des produits */}
@@ -354,7 +384,93 @@ const ArtPage = () => {
                     <p className="text-sm text-muted-foreground">Essayez de modifier vos critères de recherche</p>
                   </div>
                 ) : (
-                  <ProductGrid products={products} />
+                  <>
+                    <ProductGrid products={paginatedProducts} />
+                    
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                      <div className="mt-8 mb-4">
+                        <Pagination>
+                          <PaginationContent>
+                            <PaginationItem>
+                              <PaginationPrevious 
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (currentPage > 1) {
+                                    setCurrentPage(currentPage - 1);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }
+                                }}
+                                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                              />
+                            </PaginationItem>
+                            
+                            {/* Numéros de page */}
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                              // Afficher les 3 premières pages, la page courante +/- 1, et les 3 dernières
+                              const showPage = 
+                                page <= 3 || 
+                                page >= totalPages - 2 || 
+                                (page >= currentPage - 1 && page <= currentPage + 1);
+                              
+                              const showEllipsisBefore = page === 4 && currentPage > 5;
+                              const showEllipsisAfter = page === totalPages - 3 && currentPage < totalPages - 4;
+
+                              if (showEllipsisBefore) {
+                                return (
+                                  <PaginationItem key={`ellipsis-before-${page}`}>
+                                    <PaginationEllipsis />
+                                  </PaginationItem>
+                                );
+                              }
+
+                              if (showEllipsisAfter) {
+                                return (
+                                  <PaginationItem key={`ellipsis-after-${page}`}>
+                                    <PaginationEllipsis />
+                                  </PaginationItem>
+                                );
+                              }
+
+                              if (!showPage) return null;
+
+                              return (
+                                <PaginationItem key={page}>
+                                  <PaginationLink
+                                    href="#"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setCurrentPage(page);
+                                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }}
+                                    isActive={currentPage === page}
+                                    className="cursor-pointer"
+                                  >
+                                    {page}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            })}
+
+                            <PaginationItem>
+                              <PaginationNext 
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  if (currentPage < totalPages) {
+                                    setCurrentPage(currentPage + 1);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }
+                                }}
+                                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                              />
+                            </PaginationItem>
+                          </PaginationContent>
+                        </Pagination>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -433,7 +549,7 @@ const ArtPage = () => {
             )}
           </TabsContent>
 
-          {/* Événements */}
+          {/* Événements - UNIQUEMENT LES ÉVÉNEMENTS */}
           <TabsContent value="evenements" className="space-y-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-4">Événements Culturels</h2>
@@ -442,16 +558,20 @@ const ArtPage = () => {
               </p>
             </div>
 
-            {/* Affichage des événements */}
+            {/* Affichage UNIQUEMENT des événements (pas de produits art) */}
             {eventsLoading ? (
               <ProductGrid products={[]} isLoading={true} skeletonCount={6} />
             ) : eventsError ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Erreur de chargement des événements</p>
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-semibold mb-2">Erreur de chargement des événements</p>
+                <p className="text-sm text-muted-foreground">Veuillez réessayer plus tard</p>
               </div>
             ) : events.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Aucun événement trouvé</p>
+                <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-semibold mb-2">Aucun événement disponible</p>
+                <p className="text-sm text-muted-foreground">Les événements seront annoncés prochainement</p>
               </div>
             ) : (
               <ProductGrid products={events} />

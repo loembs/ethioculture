@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, Chrome, Palette, Utensils, ShoppingBag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services";
 import { SecurityValidator } from "@/utils/validation";
@@ -24,6 +24,10 @@ const LoginPage = () => {
   const [otpEmail, setOtpEmail] = useState('');
   const [otpCode, setOtpCode] = useState(['', '', '', '']);
   const [otpSending, setOtpSending] = useState(false);
+  
+  // Reset Password States
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   
   // Récupérer l'URL de redirection (par défaut: profil)
   const redirectUrl = searchParams.get('redirect') || '/profile';
@@ -195,228 +199,363 @@ const LoginPage = () => {
     }
   };
 
+  // Connexion avec Google
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await authService.signInWithGoogle();
+      
+      toast({
+        title: "Redirection vers Google",
+        description: "Veuillez patienter..."
+      });
+    } catch (error: any) {
+      console.error('Erreur Google Sign In:', error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de se connecter avec Google",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+    }
+  };
+
+  // Envoyer l'email de réinitialisation
+  const handleSendResetEmail = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "Email requis",
+        description: "Veuillez entrer votre email",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await authService.sendPasswordResetEmail(resetEmail);
+      
+      toast({
+        title: "Email envoyé !",
+        description: "Vérifiez votre boîte email pour réinitialiser votre mot de passe"
+      });
+      
+      setShowResetPassword(false);
+      setResetEmail('');
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible d'envoyer l'email",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ethiopian-green/10 via-background to-ethiopian-gold/10 p-4">
-      <div className="w-full max-w-md">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/')}
-          className="mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour à l'accueil
-        </Button>
+    <div className="min-h-screen flex bg-white">
+      {/* Côté gauche - Simple et vert */}
+      <div className="hidden lg:flex lg:w-2/5 bg-ethiopian-green items-center justify-center p-12">
+        <div className="text-center text-white space-y-8">
+          <div>
+            <h1 className="text-5xl font-bold mb-4">Geezaculture</h1>
+            <p className="text-xl text-white/90">Art et saveurs d'Éthiopie</p>
+          </div>
+          
+          <div className="space-y-4 max-w-sm mx-auto mt-12">
+            <div className="flex items-center gap-3 text-left">
+              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Palette className="h-5 w-5" />
+              </div>
+              <span className="text-sm">Œuvres d'art authentiques</span>
+            </div>
+            
+            <div className="flex items-center gap-3 text-left">
+              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Utensils className="h-5 w-5" />
+              </div>
+              <span className="text-sm">Cuisine traditionnelle</span>
+            </div>
+            
+            <div className="flex items-center gap-3 text-left">
+              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                <ShoppingBag className="h-5 w-5" />
+              </div>
+              <span className="text-sm">Livraison rapide</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <Card className="shadow-2xl border-ethiopian-gold/20">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-ethiopian-green to-ethiopian-gold bg-clip-text text-transparent">
-              🌍 Geezaculture
-            </CardTitle>
-            <p className="text-muted-foreground mt-2">
-              Découvrez l'art et les saveurs de l'Éthiopie
+      {/* Côté droit - Formulaire blanc */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+        <div className="w-full max-w-md">
+          {/* En-tête mobile */}
+          <div className="lg:hidden mb-8">
+            <div className="w-12 h-12 rounded-xl bg-ethiopian-green flex items-center justify-center mb-4">
+              <span className="text-2xl font-bold text-white">G</span>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              Geezaculture
+            </h1>
+            <p className="text-sm text-gray-600 mb-4">Art et saveurs d'Éthiopie</p>
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/')}
+              size="sm"
+              className="text-gray-600"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour
+            </Button>
+          </div>
+
+          {/* Bouton retour desktop */}
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/')}
+            className="mb-8 hidden lg:flex text-gray-600"
+            size="sm"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour
+          </Button>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Connexion
+            </h2>
+            <p className="text-gray-600">
+              Accédez à votre compte
             </p>
-          </CardHeader>
+          </div>
 
-          <CardContent>
-            {/* Formulaire OTP */}
-            {!showOTPForm ? (
-              <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Formulaire de réinitialisation de mot de passe */}
+            {showResetPassword ? (
+              <div className="space-y-5">
                 <div>
-                  <Label htmlFor="otp-email">Email</Label>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Mot de passe oublié ?</h3>
+                  <p className="text-sm text-gray-600">
+                    Recevez un lien par email
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="reset-email" className="text-gray-700">Email</Label>
                   <Input
-                    id="otp-email"
+                    id="reset-email"
                     type="email"
                     placeholder="votre@email.com"
-                    value={otpEmail}
-                    onChange={(e) => setOtpEmail(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendOTP()}
+                    className="mt-1.5"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendResetEmail()}
                   />
                 </div>
                 
                 <Button
-                  className="w-full ethiopian-button"
-                  onClick={handleSendOTP}
-                  disabled={otpSending}
+                  className="w-full bg-ethiopian-green hover:bg-ethiopian-green/90"
+                  onClick={handleSendResetEmail}
+                  disabled={isLoading}
                 >
-                  {otpSending ? 'Envoi...' : 'Recevoir un code par email'}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-center mb-4">
-                  <p className="text-sm text-muted-foreground">
-                    Code envoyé à <strong>{otpEmail}</strong>
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowOTPForm(false);
-                      setOtpCode(['', '', '', '']);
-                    }}
-                  >
-                    Modifier l'email
-                  </Button>
-                </div>
-
-                <div>
-                  <Label className="text-center block mb-3">
-                    Entrez le code à 4 chiffres
-                  </Label>
-                  <div className="flex justify-center gap-2">
-                    {[0, 1, 2, 3].map((index) => (
-                      <Input
-                        key={index}
-                        id={`otp-${index}`}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        className="w-14 h-14 text-center text-2xl font-bold"
-                        value={otpCode[index]}
-                        onChange={(e) => handleOTPChange(index, e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
-                            document.getElementById(`otp-${index - 1}`)?.focus();
-                          }
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <Button
-                  className="w-full ethiopian-button"
-                  onClick={handleVerifyOTP}
-                  disabled={isLoading || otpCode.join('').length !== 4}
-                >
-                  {isLoading ? 'Vérification...' : 'Vérifier'}
+                  {isLoading ? 'Envoi...' : 'Envoyer'}
                 </Button>
 
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="w-full"
-                  onClick={handleSendOTP}
-                  disabled={otpSending}
+                  className="w-full text-gray-600"
+                  onClick={() => {
+                    setShowResetPassword(false);
+                    setResetEmail('');
+                  }}
                 >
-                  Renvoyer le code
+                  Retour
                 </Button>
               </div>
-            )}
+            ) : /* Formulaire classique */
+            (
+              <>
+                <Tabs defaultValue="login" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6">
+                    <TabsTrigger value="login">Connexion</TabsTrigger>
+                    <TabsTrigger value="register">Inscription</TabsTrigger>
+                  </TabsList>
 
-            <Separator className="my-6" />
+                  <TabsContent value="login">
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <div>
+                        <Label htmlFor="login-email" className="text-gray-700">Email</Label>
+                        <Input 
+                          id="login-email"
+                          type="email" 
+                          placeholder="votre@email.com"
+                          className="mt-1.5"
+                          value={loginForm.email}
+                          onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="login-password" className="text-gray-700">Mot de passe</Label>
+                        <div className="relative">
+                          <Input 
+                            id="login-password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="mt-1.5 pr-10"
+                            value={loginForm.password}
+                            onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="remember"
+                            checked={loginForm.rememberMe}
+                            onCheckedChange={(checked) => 
+                              setLoginForm({ ...loginForm, rememberMe: checked as boolean })
+                            }
+                          />
+                          <label htmlFor="remember" className="text-gray-700">
+                            Se souvenir
+                          </label>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="p-0 h-auto text-ethiopian-green hover:text-ethiopian-green/80"
+                          onClick={() => setShowResetPassword(true)}
+                        >
+                          Mot de passe oublié ?
+                        </Button>
+                      </div>
+                      
+                      <Button type="submit" className="w-full bg-ethiopian-green hover:bg-ethiopian-green/90" disabled={isLoading}>
+                        {isLoading ? 'Connexion...' : 'Se connecter'}
+                      </Button>
 
-            {/* Connexion classique (repliable) */}
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Connexion</TabsTrigger>
-                <TabsTrigger value="register">Inscription</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <Label htmlFor="login-email">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="login-email"
-                        type="email" 
-                        placeholder="votre@email.com"
-                        className="pl-10"
-                        value={loginForm.email}
-                        onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="login-password">Mot de passe</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        className="pl-10 pr-10"
-                        value={loginForm.password}
-                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                        required
-                      />
-                      <button
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-gray-200" />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-white px-2 text-gray-500">ou</span>
+                        </div>
+                      </div>
+
+                      <Button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleGoogleSignIn}
+                        disabled={isLoading}
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <Button type="submit" className="w-full ethiopian-button" disabled={isLoading}>
-                    {isLoading ? 'Connexion...' : 'Se connecter'}
-                  </Button>
-                </form>
-              </TabsContent>
+                        <Chrome className="h-4 w-4 mr-2" />
+                        Continuer avec Google
+                      </Button>
+                    </form>
+                  </TabsContent>
               
-              <TabsContent value="register">
-                <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">Prénom</Label>
-                      <Input 
-                        id="firstName" 
-                        placeholder="Prénom" 
-                        value={registerForm.firstName}
-                        onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Nom</Label>
-                      <Input 
-                        id="lastName" 
-                        placeholder="Nom" 
-                        value={registerForm.lastName}
-                        onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
-                        required 
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="register-email">Email</Label>
-                    <Input 
-                      id="register-email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={registerForm.email}
-                      onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="register-password">Mot de passe</Label>
-                    <Input 
-                      id="register-password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={registerForm.password}
-                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                      required
-                    />
-                  </div>
-                  
-                  <Button type="submit" className="w-full ethiopian-button" disabled={isLoading}>
-                    {isLoading ? 'Inscription...' : "S'inscrire"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                  <TabsContent value="register">
+                    <form onSubmit={handleRegister} className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="firstName" className="text-gray-700">Prénom</Label>
+                          <Input 
+                            id="firstName" 
+                            placeholder="Prénom"
+                            className="mt-1.5"
+                            value={registerForm.firstName}
+                            onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName" className="text-gray-700">Nom</Label>
+                          <Input 
+                            id="lastName" 
+                            placeholder="Nom"
+                            className="mt-1.5"
+                            value={registerForm.lastName}
+                            onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
+                            required 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="register-email" className="text-gray-700">Email</Label>
+                        <Input 
+                          id="register-email"
+                          type="email"
+                          placeholder="votre@email.com"
+                          className="mt-1.5"
+                          value={registerForm.email}
+                          onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="register-password" className="text-gray-700">Mot de passe</Label>
+                        <Input 
+                          id="register-password"
+                          type="password"
+                          placeholder="6 caractères minimum"
+                          className="mt-1.5"
+                          value={registerForm.password}
+                          onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                          required
+                          minLength={6}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Au moins 6 caractères
+                        </p>
+                      </div>
+                      
+                      <Button type="submit" className="w-full bg-ethiopian-green hover:bg-ethiopian-green/90" disabled={isLoading}>
+                        {isLoading ? 'Inscription...' : "Créer mon compte"}
+                      </Button>
+
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t border-gray-200" />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-white px-2 text-gray-500">ou</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleGoogleSignIn}
+                        disabled={isLoading}
+                      >
+                        <Chrome className="h-4 w-4 mr-2" />
+                        Continuer avec Google
+                      </Button>
+                    </form>
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

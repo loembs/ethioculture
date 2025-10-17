@@ -90,7 +90,8 @@ const HomePage = () => {
                 <img
                   src={image.src}
                   alt={image.alt}
-            className="w-full h-full object-cover"
+                  className="w-full h-full object-cover blur-sm"
+                  style={{ filter: 'blur(4px)' }}
                 />
               </div>
             ))}
@@ -174,124 +175,168 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* About Section - Responsive */}
+      {/* About Section - Bienvenue chez Ge'eza */}
       <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
             {/* Text Content */}
             <div className="space-y-6 sm:space-y-8">
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-light text-gray-900 leading-tight">
-                Une cuisine de produits locaux
+                Bienvenue chez 
                 <span className="block font-bold text-ethiopian-gold mt-1 sm:mt-2">
-                  de la terre et de la mer
+                  Ge'eza
                 </span>
               </h2>
               
+              <h3 className="text-xl sm:text-2xl font-semibold text-gray-800">
+                Un pont entre les cultures, les saveurs et la créativité.
+              </h3>
+              
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-                Découvrez notre menu confortablement installés dans notre espace chaleureux, 
-                entourés de plantes qui rappellent la proximité de la nature. Notre carte 
-                propose une cuisine aux saveurs éthiopiennes qui vous emmènera en voyage.
+                Chez Ge'eza, nous croyons au pouvoir des liens entre les personnes, les lieux et les idées. 
+                Né de la rencontre entre l'Afrique de l'Est et l'Afrique de l'Ouest, Ge'eza célèbre ce qui nous unit à travers la gastronomie, l'art et le savoir-faire.
               </p>
               
               <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-                Toutes nos recettes sont préparées à partir d'ingrédients bruts transformés 
-                dans nos ateliers. Nous sommes fiers de notre expertise et de vous offrir 
-                une cuisine maison qui allie qualité et traçabilité.
+                Notre mission est de créer un espace où la tradition rencontre l'innovation, et où l'échange culturel devient un mode de vie.
               </p>
+
+              {/* Cuisine Section */}
+              <div className="pt-4">
+                <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center">
+                  <Utensils className="h-5 w-5 mr-2 text-ethiopian-red" />
+                  Cuisine
+                </h4>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Découvrez l'authenticité de la cuisine éthiopienne, réinventée au Sénégal. 
+                  Ge'eza propose des plats faits maison, préparés à partir d'ingrédients locaux et de recettes ancestrales qui racontent une histoire de partage et de savoir-faire.
+                </p>
+              </div>
+
+              {/* Culture Section */}
+              <div>
+                <h4 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center">
+                  <Palette className="h-5 w-5 mr-2 text-ethiopian-blue" />
+                  Culture
+                </h4>
+                <p className="text-base text-gray-600 leading-relaxed">
+                  Ge'eza, c'est bien plus qu'une expérience gastronomique — c'est une plateforme culturelle. 
+                  Nous collaborons avec des artistes, musiciens et créateurs locaux pour organiser des événements qui valorisent l'identité africaine et les échanges entre disciplines et régions.
+                </p>
+              </div>
               
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
                 <Link to="/cuisine">
                   <Button className="bg-ethiopian-gold hover:bg-yellow-600 text-black font-semibold px-6 sm:px-8 py-3 rounded-xl w-full sm:w-auto">
                     Découvrir notre menu
                   </Button>
                 </Link>
-                <Link to="/about">
+                <Link to="/art">
                   <Button variant="outline" className="border-2 border-gray-900 text-black font-semibold px-6 sm:px-8 py-3 rounded-xl w-full sm:w-auto">
-                    En savoir plus
+                    Explorer l'art
                   </Button>
                 </Link>
               </div>
             </div>
             
-            {/* Image Grid */}
+            {/* Image Grid - 2 Cuisine, 2 Tableaux (Art) */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
+                {/* Cuisine 1 */}
                 <img 
-                  src="/Geeza02.jpg"
-                  alt="Cuisine éthiopienne"
-                  className="w-full h-64 object-cover"
+                  src="/Geeza05.jpg"
+                  alt="Cuisine éthiopienne traditionnelle"
+                  className="w-full h-64 object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow"
                 />
+                {/* Tableau 1 (Art) */}
                 <img 
-                  src="/Geeza04.jpg"
-                  alt="Art éthiopien"
-                  className="w-full h-48 object-cover"
+                  src="/tableau1.JPG"
+                  alt="Tableau d'art africain"
+                  className="w-full h-48 object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow"
                 />
               </div>
               <div className="space-y-4 mt-8">
+                {/* Cuisine 2 */}
                 <img 
-                  src="/Geeza05.jpg"
-                  alt="Cérémonie du café"
-                  className="w-full h-48 object-cover"
+                  src="/Geeza04.jpg"
+                  alt="Plats éthiopiens faits maison"
+                  className="w-full h-48 object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow"
                 />
+                {/* Tableau 2 (Art) */}
                 <img 
-                  src="/evenement.jpg"
-                  alt="Traditions éthiopiennes"
-                  className="w-full h-64 object-cover"
+                  src="/tableau2.JPG"
+                  alt="Œuvre d'art contemporaine"
+                  className="w-full h-64 object-cover rounded-lg shadow-lg hover:shadow-xl transition-shadow"
                 />
               </div>
             </div>
-                  </div>
-                </div>
+          </div>
+        </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 bg-gray-50">
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-light text-gray-900 mb-6">
-              Nos <span className="font-bold text-ethiopian-gold">Spécialités</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Une expérience complète alliant gastronomie authentique et art contemporain
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Cuisine */}
-            <div className="text-center group">
-              <div className="mb-6">
-                <Utensils className="h-16 w-16 text-ethiopian-gold mx-auto group-hover:scale-110 transition-transform" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Cuisine Authentique</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Découvrez les saveurs traditionnelles éthiopiennes préparées avec des ingrédients locaux 
-                et des techniques ancestrales transmises de génération en génération.
-              </p>
-                  </div>
+      {/* Features Section - Concept Store & Vision */}
+      <section className="py-16 sm:py-20 md:py-24 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+          <div className="max-w-6xl mx-auto space-y-12 sm:space-y-16">
             
-            {/* Art */}
-            <div className="text-center group">
-              <div className="mb-6">
-                <Palette className="h-16 w-16 text-ethiopian-gold mx-auto group-hover:scale-110 transition-transform" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Art Contemporain</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Immersion dans l'art africain contemporain avec des œuvres d'artistes locaux 
-                et internationaux qui célèbrent la richesse culturelle éthiopienne.
-              </p>
-                  </div>
-            
-            {/* Événements */}
-            <div className="text-center group">
-              <div className="mb-6">
-                <ArrowRight className="h-16 w-16 text-ethiopian-gold mx-auto group-hover:scale-110 transition-transform" />
+            {/* Concept Store */}
+            <div className="bg-white rounded-2xl p-8 sm:p-10 md:p-12 shadow-lg">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-ethiopian-gold/10 flex items-center justify-center mr-4">
+                  <Palette className="h-6 w-6 text-ethiopian-gold" />
                 </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Événements Culturels</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Participez à nos événements culturels, concerts et expositions qui mettent en valeur 
-                la diversité et la créativité de la culture éthiopienne moderne.
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Concept Store</h3>
+              </div>
+              <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
+                Notre concept store met en avant des produits africains éthiques et authentiques, allant de l'artisanat au design, 
+                en passant par des produits culinaires sélectionnés. Chaque création raconte une histoire — celle d'un savoir-faire, 
+                d'une communauté et d'un engagement — reliant les artisans, les consommateurs et les cultures à travers une démarche 
+                durable et consciente.
               </p>
-                  </div>
+            </div>
+
+            {/* Notre Vision */}
+            <div className="bg-gradient-to-br from-ethiopian-gold/5 to-ethiopian-green/5 rounded-2xl p-8 sm:p-10 md:p-12 border-2 border-ethiopian-gold/20">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 rounded-full bg-ethiopian-green/10 flex items-center justify-center mr-4">
+                  <ArrowRight className="h-6 w-6 text-ethiopian-green" />
+                </div>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Notre Vision</h3>
+              </div>
+              <div className="space-y-4">
+                <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
+                  Ge'eza porte une ambition plus grande : la création de <strong>l'Institut Ge'eza</strong>, un centre culturel et économique 
+                  favorisant la collaboration entre l'Afrique de l'Est et l'Afrique de l'Ouest.
+                </p>
+                <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
+                  Depuis Dakar, nous souhaitons bâtir un modèle d'éducation, de créativité et d'entrepreneuriat enraciné dans les 
+                  savoirs africains et ouvert sur le monde.
+                </p>
+                <p className="text-lg sm:text-xl font-semibold text-ethiopian-green italic mt-6">
+                  Ge'eza, ce n'est pas seulement un nom — c'est une invitation à redécouvrir l'Afrique à travers ses saveurs, 
+                  son art et ses talents.
+                </p>
+              </div>
+            </div>
+
+            {/* CTA Final */}
+            <div className="text-center pt-8">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/cuisine">
+                  <Button size="lg" className="bg-ethiopian-red hover:bg-red-700 text-white font-semibold px-8 py-4 text-lg rounded-xl w-full sm:w-auto">
+                    <Utensils className="h-5 w-5 mr-2" />
+                    Découvrir la Cuisine
+                  </Button>
+                </Link>
+                <Link to="/art">
+                  <Button size="lg" variant="outline" className="border-2 border-ethiopian-blue text-ethiopian-blue hover:bg-ethiopian-blue hover:text-white font-semibold px-8 py-4 text-lg rounded-xl w-full sm:w-auto">
+                    <Palette className="h-5 w-5 mr-2" />
+                    Explorer l'Art & Culture
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

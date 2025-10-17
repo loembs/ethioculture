@@ -17,14 +17,28 @@ import PaymentPage from "@/pages/PaymentPage";
 import ProfilePage from "@/pages/ProfilePage";
 import UserProfile from "@/pages/UserProfile";
 import LoginPage from "@/pages/LoginPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import ConceptStorePage from "@/pages/ConceptStorePage";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { usePreloadData } from "@/hooks/usePreloadData";
 import { useCartSync } from "@/hooks/useCartSync";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { SupabaseDebug } from "@/components/SupabaseDebug";
 import { startSessionMonitoring } from "@/utils/sessionManager";
+import { forceCleanupOnStart, disableBrowserCache, startPeriodicCleanup, checkAndRepairLocalStorage } from "@/utils/forceClearCache";
+import { setupProductionLogging } from "@/utils/security";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { useEffect } from "react";
+
+// NETTOYAGE AGRESSIF DU CACHE AU DÉMARRAGE
+if (typeof window !== 'undefined') {
+  checkAndRepairLocalStorage();
+  forceCleanupOnStart();
+  disableBrowserCache();
+  startPeriodicCleanup();
+  setupProductionLogging(); // Désactiver les logs sensibles en production
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,25 +74,29 @@ const AppContent = () => {
     <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/admin/*" element={<AdminDashboard />} />
+        <Route path="/admin/*" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
         <Route path="/*" element={
           <div className="min-h-screen flex flex-col">
-            <SupabaseDebug />
             <Header />
             <main className="flex-1">
               <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/cuisine" element={<CuisinePage />} />
               <Route path="/art" element={<ArtPage />} />
+              <Route path="/concept-store" element={<ConceptStorePage />} />
               <Route path="/artists" element={<ArtGalleryPage />} />
               <Route path="/artists/:id" element={<ArtistProfilePage />} />
               <Route path="/product/:id" element={<ProductDetailPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/payment/:orderId" element={<PaymentPage />} />
-              <Route path="/payment/callback" element={<PaymentPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/user-profile" element={<UserProfile />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              
+              {/* Routes protégées */}
+              <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+              <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/payment/:orderId" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+              <Route path="/payment/callback" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/user-profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+              
               <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
@@ -91,17 +109,19 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
