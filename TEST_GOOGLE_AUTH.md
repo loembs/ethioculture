@@ -92,3 +92,4 @@ Quand vous déployez sur Vercel, n'oubliez pas d'ajouter votre domaine dans :
 - URI de redirection : `https://votre-site.vercel.app/auth/callback`
 
 
+

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Users, Eye, Palette, Sparkles, ArrowRight, Search, SlidersHorizontal } from "lucide-react";
+import { Calendar, Users, Eye, Palette, Sparkles, ArrowRight, Search, SlidersHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, useProductFilters } from "@/hooks/useProducts";
 import { ProductGrid } from "@/components/ProductGrid";
@@ -138,6 +138,7 @@ const ArtPage = () => {
   const [sortBy, setSortBy] = useState('name');
   const [priceFilters, setPriceFilters] = useState<any>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   const itemsPerPage = 10;
   const { filters, updateFilters } = useProductFilters();
   
@@ -215,50 +216,121 @@ const ArtPage = () => {
     setCurrentPage(1);
   };
 
+  // Sélectionner 6 œuvres pour le carrousel
+  const carouselProducts = products.slice(0, 6);
+  
+  // Auto-défilement du carrousel
+  useEffect(() => {
+    if (carouselProducts.length > 0) {
+      const interval = setInterval(() => {
+        setCarouselIndex((prev) => (prev + 1) % carouselProducts.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [carouselProducts.length]);
+
+  const nextSlide = () => {
+    setCarouselIndex((prev) => (prev + 1) % carouselProducts.length);
+  };
+
+  const prevSlide = () => {
+    setCarouselIndex((prev) => (prev - 1 + carouselProducts.length) % carouselProducts.length);
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section Immersif */}
-      <section className="section-hero relative h-screen flex items-center justify-center text-white overflow-hidden">
-        <div className="absolute inset-0 flex">
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline
-            preload="auto"
+      {/* Hero Section avec Image de Musée */}
+      <section className="relative h-screen flex items-end justify-center overflow-hidden">
+        {/* Image de musée en fond */}
+        <div className="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1564399579883-451a5d44ec08?q=80&w=2000&auto=format&fit=crop"
+            alt="Musée d'art"
             className="w-full h-full object-cover"
-            style={{
-              filter: 'brightness(1.1) contrast(1.1)',
-              imageRendering: 'auto'
-            }}
-            onError={(e) => {
-              console.error('Erreur de chargement de la vidéo:', e);
-              // Fallback vers une image si la vidéo ne charge pas
-              e.currentTarget.style.display = 'none';
-            }}
-          >
-            <source src="https://mjmihwjjoknmssnkhpua.supabase.co/storage/v1/object/sign/Art/videogeeza.mp4?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV81MmY1ZTdhZi1lZjZjLTQyZTgtOWM4Ni01ZTBlNjFlODQ2N2YiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJBcnQvdmlkZW9nZWV6YS5tcDQiLCJpYXQiOjE3NTkzMzg2ODcsImV4cCI6MTc5MDg3NDY4N30.t59Y_T7AZWFqgpRMIfum7RoK-R9tiRxrHvbOCZLpBN8" type="video/mp4" />
-          </video>
-          {/* Image de fallback si la vidéo ne charge pas */}
-          
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/60" />
         </div>
-        <div className="absolute inset-0 " />
-        
-        {/* Éléments décoratifs flottants - Responsive */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-16 sm:top-20 left-4 sm:left-10 w-4 sm:w-6 h-4 sm:h-6 bg-ethiopian-gold rounded-full animate-spice-float opacity-60"></div>
-          <div className="absolute top-32 sm:top-40 right-8 sm:right-20 w-3 sm:w-4 h-3 sm:h-4 bg-ethiopian-blue rounded-full animate-spice-float opacity-40 animate-delay-200"></div>
-          <div className="absolute bottom-24 sm:bottom-32 left-8 sm:left-20 w-4 sm:w-5 h-4 sm:h-5 bg-ethiopian-red rounded-full animate-spice-float opacity-50 animate-delay-300"></div>
-          <div className="absolute bottom-16 sm:bottom-20 right-16 sm:right-32 w-2 sm:w-3 h-2 sm:h-3 bg-ethiopian-gold rounded-full animate-spice-float opacity-30 animate-delay-400"></div>
-        </div>
-        
-        {/* Titre principal */}
-        
 
-        {/* Bouton d'action centré */}
+        {/* Carrousel d'œuvres superposé en bas */}
+        <div className="relative z-10 w-full pb-20 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            
+
+            {/* Carrousel simplifié - Images uniquement */}
+            {carouselProducts.length > 0 ? (
+              <div className="relative max-w-5xl mx-auto">
+                {/* Conteneur du carrousel */}
+                <div className="overflow-hidden rounded-xl">
+                  <div 
+                    className="flex transition-transform duration-700 ease-out"
+                    style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+                  >
+                    {carouselProducts.map((product) => (
+                      <div 
+                        key={product.id}
+                        className="min-w-full px-2"
+                      >
+                        <div 
+                          className="relative h-80 rounded-xl overflow-hidden group cursor-pointer shadow-2xl"
+                          onClick={() => navigate(`/product/${product.id}`)}
+                        >
+                          <img 
+                            src={product.image || '/placeholder.svg'}
+                            alt={product.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          {/* Overlay subtil avec nom */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute bottom-0 left-0 right-0 p-6">
+                              <h3 className="text-2xl font-bold text-white mb-2">{product.name}</h3>
+                              <p className="text-white/90 text-lg">{product.price.toLocaleString()} FCFA</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Boutons de navigation */}
+                <button
+                  onClick={prevSlide}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-all"
+                  aria-label="Précédent"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-900" />
+                </button>
+                
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-all"
+                  aria-label="Suivant"
+                >
+                  <ChevronRight className="h-5 w-5 text-gray-900" />
+                </button>
+
+                {/* Indicateurs */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {carouselProducts.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCarouselIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === carouselIndex 
+                          ? 'w-8 bg-white' 
+                          : 'w-2 bg-white/60 hover:bg-white/80'
+                      }`}
+                      aria-label={`Aller à l'œuvre ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 animate-bounce z-10">
           <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
             <div className="w-1 h-3 bg-white/70 rounded-full mt-2 animate-pulse"></div>
           </div>

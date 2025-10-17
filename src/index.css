@@ -54,8 +54,8 @@
     --shadow-warm: 0 5px 20px -5px hsl(var(--ethiopian-gold) / 0.4);
     
     /* Typography & Spacing */
-    --font-amharic: 'Noto Sans Ethiopic', system-ui, sans-serif;
-    --font-modern: 'Inter', system-ui, sans-serif;
+    --font-heading: 'Montserrat', sans-serif;
+    --font-body: 'Lato', sans-serif;
     --transition-cultural: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
@@ -123,5 +123,15 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Lato', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+  }
+
+  button {
+    font-family: 'Montserrat', sans-serif;
   }
 }

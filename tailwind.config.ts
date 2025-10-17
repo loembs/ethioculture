@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -84,9 +85,9 @@ export default {
         'warm': 'var(--shadow-warm)',
       },
       fontFamily: {
-        'amharic': 'var(--font-amharic)',
-        'modern': 'var(--font-modern)',
-        'sans': ['Inter', 'system-ui', 'sans-serif'],
+        'heading': ['Montserrat', 'sans-serif'],
+        'body': ['Lato', 'sans-serif'],
+        'sans': ['Lato', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         "accordion-down": {
@@ -109,6 +110,10 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--ethiopian-green) / 0.4)" },
           "50%": { boxShadow: "0 0 0 15px hsl(var(--ethiopian-green) / 0)" },
         },
+        "scroll": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -116,8 +121,9 @@ export default {
         "cultural-fade": "cultural-fade 0.6s ease-out",
         "dish-hover": "dish-hover 0.3s ease-out",
         "ethiopian-pulse": "ethiopian-pulse 2s infinite",
+        "scroll": "scroll 20s linear infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;
