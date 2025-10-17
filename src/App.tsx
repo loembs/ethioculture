@@ -91,8 +91,10 @@ const AppContent = () => {
               <Route path="/product/:id" element={<ProductDetailPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               
-              {/* Routes protégées */}
-              <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+              {/* Panier accessible sans connexion */}
+              <Route path="/cart" element={<CartPage />} />
+              
+              {/* Routes protégées - nécessitent une connexion */}
               <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/payment/:orderId" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />
               <Route path="/payment/callback" element={<ProtectedRoute><PaymentPage /></ProtectedRoute>} />

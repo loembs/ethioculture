@@ -17,6 +17,7 @@ import { CurrencySelector } from "./CurrencySelector";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CacheClearButton } from "./CacheClearButton";
+import { OnboardingTour } from "./OnboardingTour";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -190,7 +191,7 @@ const Header = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden p-1.5 sm:p-2 hover:bg-gray-100"
+              className="lg:hidden p-1.5 sm:p-2 hover:bg-gray-100 mobile-menu-button"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : <Menu className="h-4 w-4 sm:h-5 sm:w-5" />}
@@ -243,6 +244,9 @@ const Header = () => {
           </div>
         )}
       </div>
+
+      {/* Guide de démarrage */}
+      <OnboardingTour />
     </header>
   );
 };
