@@ -18,6 +18,7 @@ import ProfilePage from "@/pages/ProfilePage";
 import UserProfile from "@/pages/UserProfile";
 import LoginPage from "@/pages/LoginPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import AuthCallbackPage from "@/pages/AuthCallbackPage";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ConceptStorePage from "@/pages/ConceptStorePage";
@@ -74,6 +75,7 @@ const AppContent = () => {
     <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/admin/*" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
         <Route path="/*" element={
           <div className="min-h-screen flex flex-col">
